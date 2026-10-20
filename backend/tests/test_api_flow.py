@@ -152,6 +152,8 @@ def test_analyst_request_info(api, run_pipeline):
     assert r.json()["status"]["code"] == "NEED_INFO"
     a = get(api, h, app_id)
     assert a["missing_items"][0]["text"] == "Приложите действующие договоры подряда"
+    upcoming = [step["status"] for step in a["timeline"] if step["state"] == "upcoming"]
+    assert upcoming == ["MANUAL_REVIEW", "DECISION", "SIGNING", "ISSUED"]
     assert api.post(f"/api/applications/{app_id}/resubmit", headers=h).status_code == 409
     r = api.post(f"/api/applications/{app_id}/documents", headers=h, data={"kind": "OTHER"},
                  files={"file": ("contract.pdf", b"%PDF-1.4 synthetic contract", "application/pdf")})

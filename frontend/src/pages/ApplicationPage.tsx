@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { DocumentsBlock } from "../components/Documents";
 import { ErrorBox, Loading, Money, Route, StatusChip, TurnoverBars } from "../components/ui";
 import { api, download, type Application } from "../lib/api";
+import { hasPendingAnalystRequest } from "../lib/documents";
 import { date, dateTime, money, months, pct } from "../lib/format";
 import { useAction, useResource } from "../lib/hooks";
 
@@ -232,9 +233,7 @@ function NeedInfoPanel({ app, onChange }: { app: Application; onChange: (a: Appl
   const eqSaved = !!(app.collateral?.equipment_name && app.collateral?.equipment_cost);
   const statementOk = (app.financials?.months_count ?? 0) >= 3;
   const invoiceOk = app.documents.some((d) => d.kind === "EQUIPMENT_INVOICE");
-  const analystOk = items.filter((i) => i.code === "ANALYST_REQUEST").every((i) =>
-    i.document_ids_before_request !== undefined && app.documents.some((d) => !i.document_ids_before_request!.includes(d.id)),
-  );
+  const analystOk = !hasPendingAnalystRequest(app);
   const done = analystOk && (!codes.has("STATEMENT") || statementOk) && (!codes.has("EQUIPMENT_INFO") || eqSaved) && (!codes.has("EQUIPMENT_INVOICE") || invoiceOk);
 
   return (

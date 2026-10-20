@@ -15,4 +15,6 @@
 
 ## Старт
 
+[Демонстрация на 3 минуты](DEMO.md) · [Результат прохода в 06:25](MORNING_RUN.md).
+
 Исходники импортированы в main: [HACK-000](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/1). Доработки процесса и дизайна — [PR #24](https://github.com/Makasinnnnnn/AlphaFutureHackaton/pull/24). Перед новой работой прочитайте [последний отчёт](NIGHT_RUN.md) и [следующий проход](NEXT_RUN.md). Доступ коллег к приватному репозиторию и проекту настраивает владелец по конкретным GitHub-аккаунтам; их список пока не предоставлен.

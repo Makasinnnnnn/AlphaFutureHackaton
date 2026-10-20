@@ -69,7 +69,12 @@ def timeline(app: Application) -> list[TimelineItem]:
             actor=e.actor_type,
             reason=e.reason if e.actor_type != "SYSTEM" or e.to_status in ("NEED_INFO", "REJECTED") else None,
         ))
-    for st in UPCOMING.get(Status(app.status), []):
+    upcoming = UPCOMING.get(Status(app.status), [])
+    if Status(app.status) == Status.NEED_INFO and any(
+        item.get("code") == "ANALYST_REQUEST" for item in (app.missing_items or [])
+    ):
+        upcoming = [Status.MANUAL_REVIEW, DECISION_STEP, Status.SIGNING, Status.ISSUED]
+    for st in upcoming:
         title = "Решение банка" if st == DECISION_STEP else CLIENT_COPY[st]["title"]
         items.append(TimelineItem(status=str(st), title=title, at=None, state="upcoming"))
     return items
