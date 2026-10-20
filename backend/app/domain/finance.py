@@ -37,6 +37,11 @@ def round_down(value: float, step: int = 10_000) -> int:
 def summarize_turnovers(months: list[dict]) -> dict:
     """Сводка по помесячным оборотам: средний приход, оценка годовой выручки, стабильность."""
     rows = sorted(months, key=lambda m: m["month"])
+    for row in rows:
+        for field in ("inflow", "outflow"):
+            value = float(row.get(field, 0))
+            if not math.isfinite(value) or value < 0 or value > 1e15:
+                raise ValueError("Turnovers must be finite non-negative amounts within 1e15")
     inflows = [float(m["inflow"]) for m in rows]
     if not inflows:
         return {"months_count": 0}

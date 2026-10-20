@@ -152,6 +152,16 @@ def test_analyst_request_info(api, run_pipeline):
     assert r.json()["status"]["code"] == "NEED_INFO"
     a = get(api, h, app_id)
     assert a["missing_items"][0]["text"] == "Приложите действующие договоры подряда"
+    assert api.post(f"/api/applications/{app_id}/resubmit", headers=h).status_code == 409
+    r = api.post(f"/api/applications/{app_id}/documents", headers=h, data={"kind": "OTHER"},
+                 files={"file": ("contract.pdf", b"%PDF-1.4 synthetic contract", "application/pdf")})
+    assert r.status_code == 201, r.text
+    r = api.post(f"/api/applications/{app_id}/resubmit", headers=h)
+    assert r.status_code == 200, r.text
+    assert r.json()["status"]["code"] == "MANUAL_REVIEW"
+    assert r.json()["missing_items"] is None
+    run_pipeline()
+    assert get(api, h, app_id)["status"]["code"] == "MANUAL_REVIEW"
 
 
 def test_overdue_rejected(api, run_pipeline):
@@ -208,3 +218,31 @@ def test_stats(api):
     ha = login(api, "analyst@demo.ru")
     s = api.get("/api/analyst/stats", headers=ha).json()
     assert s["total"] >= 1 and "by_status" in s
+
+
+def test_worker_repeated_error_goes_to_manual_review(api, monkeypatch):
+    from app import worker
+    from app.config import get_settings
+
+    h = login(api, "anna@demo.ru")
+    app_id = create_and_submit(api, h, product_code="WORKING_CAPITAL", amount=500_000, term_months=12)
+    original = worker.process_step
+
+    def fail_target(db, application, client):
+        if application.id == app_id:
+            raise RuntimeError("synthetic failure")
+        return original(db, application, client)
+
+    monkeypatch.setattr(worker, "process_step", fail_target)
+    monkeypatch.setattr(get_settings(), "pipeline_error_retry_delay_sec", 0)
+    for _ in range(3):
+        worker.run_once(batch=1)
+    a = get(api, h, app_id)
+    assert a["status"]["code"] == "MANUAL_REVIEW"
+    ha = login(api, "analyst@demo.ru")
+    full = api.get(f"/api/analyst/applications/{app_id}", headers=ha).json()
+    errors = [e for e in full["events"] if e["event_type"] == "PIPELINE_ERROR"]
+    assert [e["payload"]["attempt"] for e in errors] == [1, 2, 3]
+    assert not any("synthetic failure" in str(e) for e in errors)
+    worker.run_once(batch=1)
+    assert get(api, h, app_id)["status"]["code"] == "MANUAL_REVIEW"

@@ -78,7 +78,7 @@ def timeline(app: Application) -> list[TimelineItem]:
 def client_decision(decision: dict | None) -> dict | None:
     if not decision:
         return None
-    return {k: decision.get(k) for k in ("outcome", "offer", "reasons", "decided_by", "decided_at", "analyst_comment")}
+    return {k: decision.get(k) for k in ("outcome", "offer", "reasons", "decided_by", "decided_at", "analyst_comment", "requested_terms")}
 
 
 def company_out(app: Application) -> CompanyOut:
