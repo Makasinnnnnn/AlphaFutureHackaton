@@ -172,6 +172,8 @@ SCENARIOS = [scenario_approved, scenario_counter, scenario_need_info, scenario_m
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://localhost:8080")
     args = ap.parse_args()

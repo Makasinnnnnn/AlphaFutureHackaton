@@ -131,9 +131,20 @@ function ScoreTab({ app }: { app: AA }) {
           {d.recommendation && <div className="callout info">{d.recommendation}</div>}
           {d.offer && <p>Предложение: {d.offer.product_name}, {money(d.offer.amount)} на {months(d.offer.term_months)} под {pct(d.offer.rate)}, платёж {money(d.offer.monthly_payment)}.</p>}
           {d.limits && Object.keys(d.limits).length > 0 && (
+            <div>
+            <p className="small muted">Лимиты исходного запроса</p>
             <dl className="kv-list">
               {Object.entries(d.limits).map(([k, v]) => <Fragment key={k}><dt>{LIMIT_NAME[k] ?? k}</dt><dd className="num">{money(v)}</dd></Fragment>)}
             </dl>
+            </div>
+          )}
+          {d.offer_limits && Object.keys(d.offer_limits).length > 0 && (
+            <div>
+              <p className="small muted">Лимиты на срок предложения ({d.offer?.term_months} мес.)</p>
+              <dl className="kv-list">
+                {Object.entries(d.offer_limits).map(([k, v]) => <Fragment key={k}><dt>{LIMIT_NAME[k] ?? k}</dt><dd className="num">{money(v)}</dd></Fragment>)}
+              </dl>
+            </div>
           )}
           {d.rules_fired && <p className="small muted">Сработавшие правила: {d.rules_fired.join(", ")}</p>}
           {d.analyst_comment && <p className="small">Комментарий аналитика: {d.analyst_comment}</p>}

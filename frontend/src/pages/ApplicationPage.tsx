@@ -108,6 +108,23 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
           <div><dt>Срок</dt><dd>{months(offer.term_months)}</dd></div>
           <div><dt>{offer.product_code === "OVERDRAFT" ? "Проценты в месяц при полном лимите" : "Платёж в месяц"}</dt><dd className="num">{money(offer.monthly_payment)}</dd></div>
         </dl>
+        {counter && !productChanged && app.decision?.requested_terms && !app.decision.requested_terms.is_overdraft && offer.product_code !== "OVERDRAFT" && (
+          <section className="terms-comparison" aria-label="Стоимость запрошенных и предложенных условий">
+            <h3>Меньше платёж — другой срок и переплата</h3>
+            <div className="table-wrap">
+              <table className="terms-table">
+                <thead><tr><th scope="col">Условие</th><th scope="col">Ваш запрос</th><th scope="col">Предложение</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Ставка</th><td>{pct(app.decision.requested_terms.rate)}</td><td>{pct(offer.rate)}</td></tr>
+                  <tr><th scope="row">Платёж в месяц</th><td>{money(app.decision.requested_terms.monthly_payment)}</td><td>{money(offer.monthly_payment)}</td></tr>
+                  <tr><th scope="row">Все платежи, примерно</th><td>{money(app.decision.requested_terms.monthly_payment * app.term_months)}</td><td>{money(offer.monthly_payment * offer.term_months)}</td></tr>
+                  <tr><th scope="row">Переплата, примерно</th><td>{money(app.decision.requested_terms.monthly_payment * app.term_months - app.amount)}</td><td>{money(offer.monthly_payment * offer.term_months - offer.amount)}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="hint">Запрос рассчитан для сравнения по ставке демо-модели и не является одобрением. Итоговый график — в договоре; суммы округлены. Комиссии и дополнительные услуги в прототипе не моделируются.</p>
+          </section>
+        )}
         <Reasons app={app} />
         <ErrorBox error={act.error} />
         <div className="row wrap">
@@ -215,7 +232,10 @@ function NeedInfoPanel({ app, onChange }: { app: Application; onChange: (a: Appl
   const eqSaved = !!(app.collateral?.equipment_name && app.collateral?.equipment_cost);
   const statementOk = (app.financials?.months_count ?? 0) >= 3;
   const invoiceOk = app.documents.some((d) => d.kind === "EQUIPMENT_INVOICE");
-  const done = (!codes.has("STATEMENT") || statementOk) && (!codes.has("EQUIPMENT_INFO") || eqSaved) && (!codes.has("EQUIPMENT_INVOICE") || invoiceOk);
+  const analystOk = items.filter((i) => i.code === "ANALYST_REQUEST").every((i) =>
+    i.document_ids_before_request !== undefined && app.documents.some((d) => !i.document_ids_before_request!.includes(d.id)),
+  );
+  const done = analystOk && (!codes.has("STATEMENT") || statementOk) && (!codes.has("EQUIPMENT_INFO") || eqSaved) && (!codes.has("EQUIPMENT_INVOICE") || invoiceOk);
 
   return (
     <section className="panel stack gap-16">
@@ -243,6 +263,7 @@ function NeedInfoPanel({ app, onChange }: { app: Application; onChange: (a: Appl
       )}
       <DocumentsBlock app={app} onChange={onChange} needStatement={codes.has("STATEMENT")}
         only={codes.has("ANALYST_REQUEST") ? new Set(["STATEMENT", "EQUIPMENT_INVOICE", "OTHER"]) : undefined} />
+      {codes.has("ANALYST_REQUEST") && <p className="hint">Приложите документы по запросу. Специалист проверит их после повторной отправки.</p>}
       <ErrorBox error={act.error} />
       <div className="row wrap">
         <button className="btn primary" disabled={act.busy || !done} onClick={() => act.run(async () => onChange(await api.resubmit(app.id)))}>Отправить повторно</button>
