@@ -392,6 +392,7 @@ pre.json { font-size: 12px; background: var(--surface-2); border-radius: 8px; pa
 .dash-metrics small { font-size:11px; color:var(--muted); display:flex; justify-content:space-between; gap:8px; }
 .dash-metrics small span { font-size:17px; color:var(--ink); }
 .dash-body { grid-template-columns:minmax(0,1fr) 320px; gap:20px; }
+.dash-body > * { min-width:0; }
 .applications-panel { padding:24px; }
 .applications-panel .panel-title h2 { font-size:21px; letter-spacing:-.03em; }
 .text-link { text-decoration:none; font-size:13px; font-weight:500; }
@@ -431,7 +432,7 @@ pre.json { font-size: 12px; background: var(--surface-2); border-radius: 8px; pa
 .terms-table tbody th { font-weight:400; }
 .terms-table tbody td:last-child { font-weight:600; }
 @media(max-width:980px) {
-  .dash-body { grid-template-columns:1fr; }
+  .dash-body { grid-template-columns:minmax(0,1fr); }
   .dash-aside { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .dash-aside .panel + .panel { margin-top:0; }
   .demo-caption { grid-column:1/-1; margin:0; }

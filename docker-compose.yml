@@ -57,7 +57,11 @@ services:
     depends_on:
       api: { condition: service_healthy }
     healthcheck:
-      disable: true
+      # Liveness of PID 1 (python -m app.worker). Progress is checked by E2E.
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
 
   web:
