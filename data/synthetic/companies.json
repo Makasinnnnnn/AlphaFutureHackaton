@@ -1,0 +1,700 @@
+{
+  "generated_for": "2026-10-20",
+  "companies": [
+    {
+      "persona": "APPROVED",
+      "user": {
+        "email": "anna@demo.ru",
+        "full_name": "Смирнова Анна Сергеевна",
+        "position": "Индивидуальный предприниматель"
+      },
+      "egrul": {
+        "inn": "701712345678",
+        "ogrn": "319701700012345",
+        "legal_form": "IP",
+        "name": "ИП Смирнова Анна Сергеевна (кофейни «Зерно»)",
+        "status": "ACTIVE",
+        "registered_at": "2019-03-15",
+        "okved": "56.10",
+        "okved_name": "Деятельность ресторанов и услуги по доставке продуктов питания",
+        "address": "634050, г. Томск, пр-т Ленина, д. 40",
+        "director": "Смирнова Анна Сергеевна"
+      },
+      "fns": {
+        "mass_address": false,
+        "tax_arrears": 0,
+        "disqualified_director": false,
+        "employees_count": 14,
+        "tax_regime": "УСН",
+        "founders": []
+      },
+      "bki": {
+        "has_history": true,
+        "current_overdue_days": 0,
+        "max_overdue_days_12m": 0,
+        "obligations": [
+          {
+            "type": "Кредит на развитие",
+            "creditor": "Банк-1",
+            "opened_at": "2024-02-01",
+            "amount": 1200000,
+            "balance": 520000,
+            "monthly_payment": 40000,
+            "status": "ACTIVE"
+          },
+          {
+            "type": "Кредитная карта",
+            "creditor": "Банк-2",
+            "opened_at": "2021-06-10",
+            "amount": 300000,
+            "balance": 0,
+            "monthly_payment": 0,
+            "status": "CLOSED"
+          }
+        ],
+        "inquiries_30d": 0,
+        "total_monthly_payments": 40000
+      },
+      "bank": {
+        "is_client": true,
+        "turnovers": [
+          {
+            "month": "2025-10",
+            "inflow": 2000000.0,
+            "outflow": 1700000.0
+          },
+          {
+            "month": "2025-11",
+            "inflow": 1940000.0,
+            "outflow": 1649000.0
+          },
+          {
+            "month": "2025-12",
+            "inflow": 2060000.0,
+            "outflow": 1751000.0
+          },
+          {
+            "month": "2026-01",
+            "inflow": 1960000.0,
+            "outflow": 1666000.0
+          },
+          {
+            "month": "2026-02",
+            "inflow": 2080000.0,
+            "outflow": 1768000.0
+          },
+          {
+            "month": "2026-03",
+            "inflow": 1980000.0,
+            "outflow": 1683000.0
+          },
+          {
+            "month": "2026-04",
+            "inflow": 2040000.0,
+            "outflow": 1734000.0
+          },
+          {
+            "month": "2026-05",
+            "inflow": 1920000.0,
+            "outflow": 1632000.0
+          },
+          {
+            "month": "2026-06",
+            "inflow": 2020000.0,
+            "outflow": 1717000.0
+          },
+          {
+            "month": "2026-07",
+            "inflow": 2060000.0,
+            "outflow": 1751000.0
+          },
+          {
+            "month": "2026-08",
+            "inflow": 1960000.0,
+            "outflow": 1666000.0
+          },
+          {
+            "month": "2026-09",
+            "inflow": 2000000.0,
+            "outflow": 1700000.0
+          }
+        ]
+      }
+    },
+    {
+      "persona": "COUNTER_OFFER",
+      "user": {
+        "email": "start@demo.ru",
+        "full_name": "Петров Игорь Алексеевич",
+        "position": "Генеральный директор"
+      },
+      "egrul": {
+        "inn": "7017111222",
+        "ogrn": "1257000012345",
+        "legal_form": "OOO",
+        "name": "ООО «Новый старт»",
+        "status": "ACTIVE",
+        "registered_at": "2025-12-10",
+        "okved": "62.01",
+        "okved_name": "Разработка компьютерного программного обеспечения",
+        "address": "634029, г. Томск, ул. Белинского, д. 15, оф. 301",
+        "director": "Петров Игорь Алексеевич"
+      },
+      "fns": {
+        "mass_address": false,
+        "tax_arrears": 0,
+        "disqualified_director": false,
+        "employees_count": 6,
+        "tax_regime": "УСН",
+        "founders": [
+          {
+            "name": "Петров Игорь Алексеевич",
+            "share": 100
+          }
+        ]
+      },
+      "bki": {
+        "has_history": false,
+        "current_overdue_days": 0,
+        "max_overdue_days_12m": 0,
+        "obligations": [],
+        "inquiries_30d": 1,
+        "total_monthly_payments": 0
+      },
+      "bank": {
+        "is_client": true,
+        "turnovers": [
+          {
+            "month": "2026-01",
+            "inflow": 650000.0,
+            "outflow": 520000.0
+          },
+          {
+            "month": "2026-02",
+            "inflow": 630000.0,
+            "outflow": 504000.0
+          },
+          {
+            "month": "2026-03",
+            "inflow": 670000.0,
+            "outflow": 536000.0
+          },
+          {
+            "month": "2026-04",
+            "inflow": 637000.0,
+            "outflow": 510000.0
+          },
+          {
+            "month": "2026-05",
+            "inflow": 676000.0,
+            "outflow": 541000.0
+          },
+          {
+            "month": "2026-06",
+            "inflow": 644000.0,
+            "outflow": 515000.0
+          },
+          {
+            "month": "2026-07",
+            "inflow": 663000.0,
+            "outflow": 530000.0
+          },
+          {
+            "month": "2026-08",
+            "inflow": 624000.0,
+            "outflow": 499000.0
+          },
+          {
+            "month": "2026-09",
+            "inflow": 656000.0,
+            "outflow": 525000.0
+          }
+        ]
+      }
+    },
+    {
+      "persona": "NEED_INFO",
+      "user": {
+        "email": "kovalev@demo.ru",
+        "full_name": "Ковалёв Дмитрий Андреевич",
+        "position": "Индивидуальный предприниматель"
+      },
+      "egrul": {
+        "inn": "701798765432",
+        "ogrn": "320701700054321",
+        "legal_form": "IP",
+        "name": "ИП Ковалёв Дмитрий Андреевич (столярная мастерская)",
+        "status": "ACTIVE",
+        "registered_at": "2020-06-01",
+        "okved": "16.23",
+        "okved_name": "Производство прочих деревянных строительных конструкций и столярных изделий",
+        "address": "634021, г. Томск, ул. Елизаровых, д. 79",
+        "director": "Ковалёв Дмитрий Андреевич"
+      },
+      "fns": {
+        "mass_address": false,
+        "tax_arrears": 0,
+        "disqualified_director": false,
+        "employees_count": 5,
+        "tax_regime": "Патент",
+        "founders": []
+      },
+      "bki": {
+        "has_history": true,
+        "current_overdue_days": 0,
+        "max_overdue_days_12m": 0,
+        "obligations": [
+          {
+            "type": "Автокредит",
+            "creditor": "Банк-3",
+            "opened_at": "2023-09-01",
+            "amount": 1500000,
+            "balance": 610000,
+            "monthly_payment": 35000,
+            "status": "ACTIVE"
+          }
+        ],
+        "inquiries_30d": 0,
+        "total_monthly_payments": 35000
+      },
+      "bank": {
+        "is_client": false,
+        "turnovers": []
+      }
+    },
+    {
+      "persona": "MANUAL_REVIEW",
+      "user": {
+        "email": "sever@demo.ru",
+        "full_name": "Лебедева Марина Олеговна",
+        "position": "Финансовый директор"
+      },
+      "egrul": {
+        "inn": "7017222333",
+        "ogrn": "1227000005678",
+        "legal_form": "OOO",
+        "name": "ООО «Северный край»",
+        "status": "ACTIVE",
+        "registered_at": "2022-05-20",
+        "okved": "41.20",
+        "okved_name": "Строительство жилых и нежилых зданий",
+        "address": "634009, г. Томск, ул. Карла Маркса, д. 7",
+        "director": "Громов Сергей Павлович"
+      },
+      "fns": {
+        "mass_address": false,
+        "tax_arrears": 0,
+        "disqualified_director": false,
+        "employees_count": 23,
+        "tax_regime": "ОСН",
+        "founders": [
+          {
+            "name": "Громов Сергей Павлович",
+            "share": 60
+          },
+          {
+            "name": "Лебедева Марина Олеговна",
+            "share": 40
+          }
+        ]
+      },
+      "bki": {
+        "has_history": true,
+        "current_overdue_days": 0,
+        "max_overdue_days_12m": 12,
+        "obligations": [
+          {
+            "type": "Кредит на пополнение оборотных средств",
+            "creditor": "Банк-1",
+            "opened_at": "2025-03-01",
+            "amount": 4000000,
+            "balance": 2300000,
+            "monthly_payment": 240000,
+            "status": "ACTIVE"
+          }
+        ],
+        "inquiries_30d": 2,
+        "total_monthly_payments": 240000
+      },
+      "bank": {
+        "is_client": true,
+        "turnovers": [
+          {
+            "month": "2025-10",
+            "inflow": 1440000.0,
+            "outflow": 1296000.0
+          },
+          {
+            "month": "2025-11",
+            "inflow": 984000.0,
+            "outflow": 886000.0
+          },
+          {
+            "month": "2025-12",
+            "inflow": 1320000.0,
+            "outflow": 1188000.0
+          },
+          {
+            "month": "2026-01",
+            "inflow": 1140000.0,
+            "outflow": 1026000.0
+          },
+          {
+            "month": "2026-02",
+            "inflow": 1560000.0,
+            "outflow": 1404000.0
+          },
+          {
+            "month": "2026-03",
+            "inflow": 1056000.0,
+            "outflow": 950000.0
+          },
+          {
+            "month": "2026-04",
+            "inflow": 1500000.0,
+            "outflow": 1350000.0
+          },
+          {
+            "month": "2026-05",
+            "inflow": 960000.0,
+            "outflow": 864000.0
+          },
+          {
+            "month": "2026-06",
+            "inflow": 1320000.0,
+            "outflow": 1188000.0
+          },
+          {
+            "month": "2026-07",
+            "inflow": 900000.0,
+            "outflow": 810000.0
+          },
+          {
+            "month": "2026-08",
+            "inflow": 1440000.0,
+            "outflow": 1296000.0
+          },
+          {
+            "month": "2026-09",
+            "inflow": 1080000.0,
+            "outflow": 972000.0
+          }
+        ]
+      }
+    },
+    {
+      "persona": "REJECTED_OVERDUE",
+      "user": {
+        "email": "vector@demo.ru",
+        "full_name": "Сидоров Олег Николаевич",
+        "position": "Генеральный директор"
+      },
+      "egrul": {
+        "inn": "7017456789",
+        "ogrn": "1167000098765",
+        "legal_form": "OOO",
+        "name": "ООО «Вектор Логистик»",
+        "status": "ACTIVE",
+        "registered_at": "2016-09-01",
+        "okved": "49.41",
+        "okved_name": "Деятельность автомобильного грузового транспорта",
+        "address": "634034, г. Томск, ул. Красноармейская, д. 101",
+        "director": "Сидоров Олег Николаевич"
+      },
+      "fns": {
+        "mass_address": false,
+        "tax_arrears": 85000,
+        "disqualified_director": false,
+        "employees_count": 31,
+        "tax_regime": "ОСН",
+        "founders": [
+          {
+            "name": "Сидоров Олег Николаевич",
+            "share": 100
+          }
+        ]
+      },
+      "bki": {
+        "has_history": true,
+        "current_overdue_days": 47,
+        "max_overdue_days_12m": 47,
+        "obligations": [
+          {
+            "type": "Лизинг",
+            "creditor": "Лизинговая компания-1",
+            "opened_at": "2023-04-01",
+            "amount": 6000000,
+            "balance": 3100000,
+            "monthly_payment": 210000,
+            "status": "OVERDUE"
+          }
+        ],
+        "inquiries_30d": 4,
+        "total_monthly_payments": 210000
+      },
+      "bank": {
+        "is_client": true,
+        "turnovers": [
+          {
+            "month": "2025-10",
+            "inflow": 3900000.0,
+            "outflow": 3783000.0
+          },
+          {
+            "month": "2025-11",
+            "inflow": 2340000.0,
+            "outflow": 2270000.0
+          },
+          {
+            "month": "2025-12",
+            "inflow": 3450000.0,
+            "outflow": 3346000.0
+          },
+          {
+            "month": "2026-01",
+            "inflow": 2160000.0,
+            "outflow": 2095000.0
+          },
+          {
+            "month": "2026-02",
+            "inflow": 3750000.0,
+            "outflow": 3638000.0
+          },
+          {
+            "month": "2026-03",
+            "inflow": 2550000.0,
+            "outflow": 2474000.0
+          },
+          {
+            "month": "2026-04",
+            "inflow": 3600000.0,
+            "outflow": 3492000.0
+          },
+          {
+            "month": "2026-05",
+            "inflow": 2400000.0,
+            "outflow": 2328000.0
+          },
+          {
+            "month": "2026-06",
+            "inflow": 3300000.0,
+            "outflow": 3201000.0
+          },
+          {
+            "month": "2026-07",
+            "inflow": 2700000.0,
+            "outflow": 2619000.0
+          },
+          {
+            "month": "2026-08",
+            "inflow": 3840000.0,
+            "outflow": 3725000.0
+          },
+          {
+            "month": "2026-09",
+            "inflow": 2250000.0,
+            "outflow": 2182000.0
+          }
+        ]
+      }
+    },
+    {
+      "persona": "REJECTED_LIQUIDATED",
+      "user": {
+        "email": "zakat@demo.ru",
+        "full_name": "Иванов Пётр Сергеевич",
+        "position": "Директор"
+      },
+      "egrul": {
+        "inn": "7017000013",
+        "ogrn": "1137000000013",
+        "legal_form": "OOO",
+        "name": "ООО «Закат»",
+        "status": "LIQUIDATED",
+        "registered_at": "2013-02-11",
+        "okved": "47.19",
+        "okved_name": "Торговля розничная прочая в неспециализированных магазинах",
+        "address": "634061, г. Томск, ул. Никитина, д. 3",
+        "director": "Иванов Пётр Сергеевич",
+        "liquidated_at": "2026-08-01"
+      },
+      "fns": {
+        "mass_address": true,
+        "tax_arrears": 0,
+        "disqualified_director": false,
+        "employees_count": 0,
+        "tax_regime": "УСН",
+        "founders": []
+      },
+      "bki": {
+        "has_history": true,
+        "current_overdue_days": 0,
+        "max_overdue_days_12m": 0,
+        "obligations": [],
+        "inquiries_30d": 0,
+        "total_monthly_payments": 0
+      },
+      "bank": {
+        "is_client": true,
+        "turnovers": [
+          {
+            "month": "2025-10",
+            "inflow": 400000.0,
+            "outflow": 380000.0
+          },
+          {
+            "month": "2025-11",
+            "inflow": 388000.0,
+            "outflow": 369000.0
+          },
+          {
+            "month": "2025-12",
+            "inflow": 412000.0,
+            "outflow": 391000.0
+          },
+          {
+            "month": "2026-01",
+            "inflow": 392000.0,
+            "outflow": 372000.0
+          },
+          {
+            "month": "2026-02",
+            "inflow": 416000.0,
+            "outflow": 395000.0
+          },
+          {
+            "month": "2026-03",
+            "inflow": 396000.0,
+            "outflow": 376000.0
+          },
+          {
+            "month": "2026-04",
+            "inflow": 408000.0,
+            "outflow": 388000.0
+          },
+          {
+            "month": "2026-05",
+            "inflow": 384000.0,
+            "outflow": 365000.0
+          },
+          {
+            "month": "2026-06",
+            "inflow": 404000.0,
+            "outflow": 384000.0
+          },
+          {
+            "month": "2026-07",
+            "inflow": 412000.0,
+            "outflow": 391000.0
+          },
+          {
+            "month": "2026-08",
+            "inflow": 392000.0,
+            "outflow": 372000.0
+          },
+          {
+            "month": "2026-09",
+            "inflow": 400000.0,
+            "outflow": 380000.0
+          }
+        ]
+      }
+    },
+    {
+      "persona": "BKI_UNAVAILABLE",
+      "user": {
+        "email": "tikhonova@demo.ru",
+        "full_name": "Тихонова Ольга Викторовна",
+        "position": "Индивидуальный предприниматель"
+      },
+      "egrul": {
+        "inn": "701755500011",
+        "ogrn": "318701700077777",
+        "legal_form": "IP",
+        "name": "ИП Тихонова Ольга Викторовна (магазин одежды)",
+        "status": "ACTIVE",
+        "registered_at": "2018-11-01",
+        "okved": "47.71",
+        "okved_name": "Торговля розничная одеждой в специализированных магазинах",
+        "address": "634045, г. Томск, ул. Красноармейская, д. 156",
+        "director": "Тихонова Ольга Викторовна"
+      },
+      "fns": {
+        "mass_address": false,
+        "tax_arrears": 0,
+        "disqualified_director": false,
+        "employees_count": 4,
+        "tax_regime": "УСН",
+        "founders": []
+      },
+      "bki": {
+        "simulate": "UNAVAILABLE"
+      },
+      "bank": {
+        "is_client": true,
+        "turnovers": [
+          {
+            "month": "2025-10",
+            "inflow": 1100000.0,
+            "outflow": 990000.0
+          },
+          {
+            "month": "2025-11",
+            "inflow": 1067000.0,
+            "outflow": 960000.0
+          },
+          {
+            "month": "2025-12",
+            "inflow": 1133000.0,
+            "outflow": 1020000.0
+          },
+          {
+            "month": "2026-01",
+            "inflow": 1078000.0,
+            "outflow": 970000.0
+          },
+          {
+            "month": "2026-02",
+            "inflow": 1144000.0,
+            "outflow": 1030000.0
+          },
+          {
+            "month": "2026-03",
+            "inflow": 1089000.0,
+            "outflow": 980000.0
+          },
+          {
+            "month": "2026-04",
+            "inflow": 1122000.0,
+            "outflow": 1010000.0
+          },
+          {
+            "month": "2026-05",
+            "inflow": 1056000.0,
+            "outflow": 950000.0
+          },
+          {
+            "month": "2026-06",
+            "inflow": 1111000.0,
+            "outflow": 1000000.0
+          },
+          {
+            "month": "2026-07",
+            "inflow": 1133000.0,
+            "outflow": 1020000.0
+          },
+          {
+            "month": "2026-08",
+            "inflow": 1078000.0,
+            "outflow": 970000.0
+          },
+          {
+            "month": "2026-09",
+            "inflow": 1100000.0,
+            "outflow": 990000.0
+          }
+        ]
+      }
+    }
+  ]
+}

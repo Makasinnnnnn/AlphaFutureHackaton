@@ -1,0 +1,1160 @@
+{
+  "info": {
+    "name": "Credit Conveyor API",
+    "description": "Коллекция запросов для проверки кредитного конвейера. Порядок папок = порядок сквозного сценария. Переменная baseUrl по умолчанию http://localhost:8080 (через nginx) — можно указать http://localhost:8000. Между отправкой заявки и получением решения подождите 6–10 секунд (конвейер работает асинхронно).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "client_token",
+      "value": ""
+    },
+    {
+      "key": "analyst_token",
+      "value": ""
+    },
+    {
+      "key": "app_id",
+      "value": ""
+    },
+    {
+      "key": "app_version",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/live",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Readiness (БД + интеграции)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Тестовые учётки",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/demo-accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "demo-accounts"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Клиент: одобрение → выдача (anna@demo.ru)",
+      "item": [
+        {
+          "name": "Вход клиента",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"anna@demo.ru\",\n  \"password\": \"demo2026\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('client_token', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Карточка компании (из ЕГРЮЛ по ИНН)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/companies/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "companies",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Обороты по счёту (внутренние данные)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/companies/me/financials",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "companies",
+                "me",
+                "financials"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Цели финансирования",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/purposes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "purposes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Подбор продукта по описанию",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assistant/recommend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assistant",
+                "recommend"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"покупатели платят через 60 дней, а аренду платить сейчас\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Продукты",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Создать черновик (идемпотентно)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"purpose\": \"PURCHASE_GOODS\",\n  \"amount\": 2000000,\n  \"term_months\": 12\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('2xx', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.collectionVariables.set('app_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('app_version', pm.response.json().version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Отправить заявку",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consent\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status SUBMITTED', () => pm.expect(pm.response.json().status.code).to.eql('SUBMITTED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Статус заявки (повторять до решения)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}"
+              ]
+            },
+            "description": "Через 6–10 секунд статус станет APPROVED"
+          }
+        },
+        {
+          "name": "Принять предложение",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "accept"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status SIGNING', () => pm.expect(pm.response.json().status.code).to.eql('SIGNING'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Подписать договор (симуляция)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/sign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "sign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": true,\n  \"signer_name\": \"Смирнова А. С.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status ISSUED', () => pm.expect(pm.response.json().status.code).to.eql('ISSUED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Уведомления в кабинете",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Клиент: дозапрос и распознавание выписки (kovalev@demo.ru)",
+      "item": [
+        {
+          "name": "Вход клиента",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kovalev@demo.ru\",\n  \"password\": \"demo2026\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('client_token', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Создать заявку на оборудование",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_code\": \"EQUIPMENT\",\n  \"purpose\": \"EQUIPMENT\",\n  \"amount\": 1800000,\n  \"term_months\": 36\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('2xx', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.collectionVariables.set('app_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('app_version', pm.response.json().version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Отправить заявку",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consent\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Статус: NEED_INFO + список недостающего",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Указать оборудование",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"collateral\": {\n    \"equipment_name\": \"Фрезерный станок с ЧПУ\",\n    \"equipment_cost\": 2000000,\n    \"supplier\": \"ООО «СтанкоТорг»\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Загрузить выписку (CSV распознаётся)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "documents"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "kind",
+                  "value": "STATEMENT",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/statement_kovalev_6m.csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Загрузить счёт на оборудование",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "documents"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "kind",
+                  "value": "EQUIPMENT_INVOICE",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/invoice_cnc_machine.pdf"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Отправить повторно",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/resubmit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "resubmit"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Статус (ожидается APPROVED)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Ручное рассмотрение (sever@demo.ru + analyst@demo.ru)",
+      "item": [
+        {
+          "name": "Вход клиента",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sever@demo.ru\",\n  \"password\": \"demo2026\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('client_token', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Создать заявку",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"purpose\": \"CASH_GAP\",\n  \"amount\": 1500000,\n  \"term_months\": 12\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('2xx', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "pm.collectionVariables.set('app_id', pm.response.json().id);",
+                  "pm.collectionVariables.set('app_version', pm.response.json().version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Отправить заявку",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consent\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Вход аналитика",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analyst@demo.ru\",\n  \"password\": \"demo2026\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('analyst_token', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Очередь: ждут решения",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analyst_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyst/applications?status=MANUAL_REVIEW",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyst",
+                "applications"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "MANUAL_REVIEW"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Карточка: скоринг, проверки, аудит",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analyst_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyst/applications/{{app_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyst",
+                "applications",
+                "{{app_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('app_version', pm.response.json().version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Решение: контрпредложение",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analyst_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyst/applications/{{app_id}}/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyst",
+                "applications",
+                "{{app_id}}",
+                "decision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"COUNTER_OFFER\",\n  \"version\": \"{{app_version}}\",\n  \"amount\": 1200000,\n  \"term_months\": 12,\n  \"comment\": \"Сезонность выручки в строительстве: снижаем сумму\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Сводка по конвейеру",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analyst_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyst/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyst",
+                "stats"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Негативные проверки",
+      "item": [
+        {
+          "name": "Сумма вне лимитов → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_code\": \"WORKING_CAPITAL\",\n  \"amount\": 99000000,\n  \"term_months\": 12\n}"
+            }
+          }
+        },
+        {
+          "name": "Недопустимый переход → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{app_id}}/sign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{app_id}}",
+                "sign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": true,\n  \"signer_name\": \"Тест\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Кабинет аналитика клиенту → 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analyst/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analyst",
+                "applications"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Без токена → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

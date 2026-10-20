@@ -1,0 +1,82 @@
+# Единая команда запуска всех компонентов:  docker compose up --build
+# Интерфейс: http://localhost:8080   Swagger: http://localhost:8080/api/docs
+name: credit-conveyor
+
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-conveyor}:${POSTGRES_PASSWORD:-conveyor}@db:5432/${POSTGRES_DB:-conveyor}
+  JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please-32b}
+  ENVIRONMENT: ${ENVIRONMENT:-demo}
+  MOCKS_BASE_URL: http://mocks:8001
+  PIPELINE_STEP_DELAY_SEC: ${PIPELINE_STEP_DELAY_SEC:-1.5}
+  LLM_ENABLED: ${LLM_ENABLED:-false}
+  OLLAMA_URL: http://ollama:11434
+  OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+  CORS_ORIGINS: http://localhost:8080,http://localhost:5173
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+services:
+  db:
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-conveyor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-conveyor}
+      POSTGRES_DB: ${POSTGRES_DB:-conveyor}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Симулятор внешних источников: ЕГРЮЛ/ЕГРИП, ФНС «Прозрачный бизнес», БКИ
+  mocks:
+    build: { context: ., dockerfile: mocks/Dockerfile }
+    environment:
+      MOCK_FAILURE_RATE: ${MOCK_FAILURE_RATE:-0}
+      MOCK_LATENCY_MS: ${MOCK_LATENCY_MS:-150}
+    restart: unless-stopped
+
+  # API: при старте применяет миграции и загружает справочники + синтетические данные
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    environment: *backend-env
+    depends_on:
+      db: { condition: service_healthy }
+      mocks: { condition: service_healthy }
+    ports:
+      - "${API_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  # Воркер конвейера: проверки, обогащение, скоринг. Масштабируется: docker compose up --scale worker=3
+  worker:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    command: ["python", "-m", "app.worker"]
+    environment: *backend-env
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+
+  web:
+    build: { context: ., dockerfile: frontend/Dockerfile }
+    depends_on:
+      api: { condition: service_healthy }
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  # Опционально: локальная open-weights LLM для ассистента подбора продукта.
+  # Запуск: LLM_ENABLED=true docker compose --profile ai up --build
+  # затем один раз: docker compose exec ollama ollama pull qwen2.5:1.5b
+  ollama:
+    image: ollama/ollama:0.5.4
+    profiles: ["ai"]
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  pgdata:
+  ollama:
