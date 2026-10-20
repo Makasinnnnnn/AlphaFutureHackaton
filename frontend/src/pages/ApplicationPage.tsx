@@ -110,7 +110,7 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
         </dl>
         {counter && !productChanged && app.decision?.requested_terms && !app.decision.requested_terms.is_overdraft && offer.product_code !== "OVERDRAFT" && (
           <section className="terms-comparison" aria-label="Стоимость запрошенных и предложенных условий">
-            <h3>Меньше платёж — другой срок и переплата</h3>
+            <h3>Сравните платёж и полную стоимость</h3>
             <div className="table-wrap">
               <table className="terms-table">
                 <thead><tr><th scope="col">Условие</th><th scope="col">Ваш запрос</th><th scope="col">Предложение</th></tr></thead>

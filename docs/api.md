@@ -77,3 +77,12 @@ curl -s -X POST $BASE/api/applications/$APP/sign -H "$AUTH" -H 'Content-Type: ap
 | БКИ | `GET /bki/report/{inn}` | `has_history, current_overdue_days, max_overdue_days_12m, total_monthly_payments, obligations[], inquiries_30d`; без истории — `has_history=false` |
 
 Переменные `MOCK_FAILURE_RATE` и `MOCK_LATENCY_MS` позволяют имитировать нестабильность источников и проверить ретраи.
+
+
+## Уточнения контрактов после проверки прототипа
+
+- `decision.limits` — ограничения исходного запроса; `decision.offer_limits` — ограничения на срок контрпредложения (видны аналитику).
+- `decision.requested_terms` — ставка, платёж и флаг овердрафта исходного расчёта для сравнения. Это расчёт демо-модели, не одобрение. На смене продукта аннуитетное сравнение в UI не выводится.
+- `ANALYST_REQUEST` в missing_items содержит document_ids_before_request. POST resubmit без нового документа возвращает 409. После загрузки — MANUAL_REVIEW, ответ проверяет аналитик. Старые запросы без baseline требуют повторного запроса специалистом; в импортированном прототипе живых данных не было.
+- CSV с неконечными/слишком большими суммами, будущими операциями или неполными строками возвращает 422 STATEMENT_PARSE_ERROR. Десятичная точка сохраняется.
+- После трёх неожиданных ошибок этапа worker передаёт заявку специалисту; аудит PIPELINE_ERROR содержит тип ошибки и номер попытки, без текста исключения.
