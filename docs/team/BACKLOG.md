@@ -1,35 +1,40 @@
 # Начальные карточки общей доски
 
-Исходный план карточек для [доски](https://github.com/users/Makasinnnnnn/projects/4). Актуальные статусы и исполнители находятся на доске. Участники сами выбирают задачи и могут добавлять новые. Идентификаторы HACK-XXX — локальные ключи для предотвращения дублей, не номера GitHub issues. Машиночитаемый вариант — `backlog.json`.
+Исходный план карточек для [доски](https://github.com/users/Makasinnnnnn/projects/4). Актуальные статусы и исполнители находятся на доске. Участники сами выбирают задачи и могут добавлять новые. Идентификаторы HACK-XXX — локальные ключи для предотвращения дублей, не номера GitHub issues. Машиночитаемый снимок связей — [backlog.json](backlog.json); актуальное состояние ведётся только в GitHub Projects.
 
 Оценки приблизительны. S ≈ 1–2 часа, M ≈ 2–4 часа, L требует разбить работу, если не укладывается в один проверяемый результат. Все карточки без назначенных исполнителей. Статус Ready ниже означает готовность начать после получения кода; зависимости всё равно нужно проверить.
 
+## Созданные карточки
+
+Все 21 задача опубликованы: HACK-000–020 соответствуют issues #1–21. Стартовая раскладка: 5 Ready, 5 Ideas, 11 Blocked. Ideas: HACK-003/004 требуют согласования правил, HACK-018–020 — необязательные расширения. Blocked означает незавершённые зависимости, указанные в карточках. Проверки кода из архива можно начинать локально, но изменения нужно переносить на согласованную версию из HACK-000. Исполнителей команда выбирает самостоятельно.
+
 ## Порядок выбора
 
-Сначала HACK-001–004. Исследование HACK-010 можно вести параллельно. Затем сквозные проверки и объяснение условий; дополнительные функции берутся после обязательного пути. В In progress максимум одна карточка на человека. При пересечении файлов согласовать правки в issue.
+Сначала [HACK-000](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/1): добавить согласованный код. Затем HACK-001–004. Исследование HACK-010 можно вести параллельно. Затем сквозные проверки и объяснение условий; дополнительные функции берутся после обязательного пути. В In progress максимум одна карточка на человека. При пересечении файлов согласовать правки в issue.
 
 | ID | Приоритет | Размер | Карточка | Зависит от |
 |---|---|---|---|---|
-| HACK-001 | P0 | M | Получить воспроизводимый Docker-запуск и записать блокеры | — |
-| HACK-002 | P0 | S | Отклонять NaN/inf и некорректные денежные значения выписки | — |
-| HACK-003 | P0 | M | Проверять период и полноту истории выписки | Решение D006 |
-| HACK-004 | P0 | M | Сделать ручной дозапрос обязательным и прослеживаемым | Решение D007 |
-| HACK-005 | P1 | S | Ограничить постоянные ошибки worker конечным маршрутом | HACK-001 |
-| HACK-006 | P1 | S | Согласовать лимиты исходного запроса и контрпредложения | — |
-| HACK-007 | P0 | M | Пройти основной путь и исключения через API и UI | HACK-001–004 |
-| HACK-008 | P1 | M | Показать сравнение запрошенных и предложенных условий | HACK-006 |
-| HACK-009 | P1 | M | Показать источники данных и понятные следующие действия | — |
-| HACK-010 | P1 | S | Выбрать сегмент и провести короткие интервью | — |
-| HACK-011 | P1 | S | Проверить понятность сценария без подсказок разработчика | HACK-008–010 |
-| HACK-012 | P1 | M | Добавить минимальный CI и сохранить результаты проверок | HACK-001 |
-| HACK-013 | P0 | M | Проверить доступы, повторы и конфликт версий | HACK-001 |
-| HACK-014 | P1 | M | Проверить сбой источника и восстановление обработки | HACK-001,005 |
-| HACK-015 | P0 | M | Сверить комплект сдачи с финальной версией | HACK-007,013,014 |
-| HACK-016 | P1 | S | Подготовить и отрепетировать короткую демонстрацию | HACK-008,011,015 |
-| HACK-017 | P0 | S | Проверить GitHub, доступ жюри и зафиксировать версию | HACK-015; репозиторий |
-| HACK-018 | P2 | M | Предварительный what-if на общей логике расчёта | HACK-007,008 |
-| HACK-019 | P2 | M | Оценить полезность необязательного языкового помощника | HACK-007,010 |
-| HACK-020 | P2 | M | Ограниченный эксперимент с PDF/OCR и честным отказом | HACK-002,003,007 |
+| [HACK-000](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/1) | P0 | S | Добавить исходники командного прототипа | — |
+| [HACK-001](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/2) | P0 | M | Получить воспроизводимый Docker-запуск и записать блокеры | — |
+| [HACK-002](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/3) | P0 | S | Отклонять NaN/inf и некорректные денежные значения выписки | — |
+| [HACK-003](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/4) | P0 | M | Проверять период и полноту истории выписки | Решение D006 |
+| [HACK-004](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/5) | P0 | M | Сделать ручной дозапрос обязательным и прослеживаемым | Решение D007 |
+| [HACK-005](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/6) | P1 | S | Ограничить постоянные ошибки worker конечным маршрутом | [HACK-001](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/2) |
+| [HACK-006](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/7) | P1 | S | Согласовать лимиты исходного запроса и контрпредложения | — |
+| [HACK-007](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/8) | P0 | M | Пройти основной путь и исключения через API и UI | HACK-001–004 |
+| [HACK-008](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/9) | P1 | M | Показать сравнение запрошенных и предложенных условий | [HACK-006](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/7) |
+| [HACK-009](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/10) | P1 | M | Показать источники данных и понятные следующие действия | — |
+| [HACK-010](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/11) | P1 | S | Выбрать сегмент и провести короткие интервью | — |
+| [HACK-011](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/12) | P1 | S | Проверить понятность сценария без подсказок разработчика | HACK-008–010 |
+| [HACK-012](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/13) | P1 | M | Добавить минимальный CI и сохранить результаты проверок | [HACK-001](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/2) |
+| [HACK-013](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/14) | P0 | M | Проверить доступы, повторы и конфликт версий | [HACK-001](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/2) |
+| [HACK-014](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/15) | P1 | M | Проверить сбой источника и восстановление обработки | HACK-001,005 |
+| [HACK-015](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/16) | P0 | M | Сверить комплект сдачи с финальной версией | HACK-007,013,014 |
+| [HACK-016](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/17) | P1 | S | Подготовить и отрепетировать короткую демонстрацию | HACK-008,011,015 |
+| [HACK-017](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/18) | P0 | S | Проверить GitHub, доступ жюри и зафиксировать версию | HACK-015; репозиторий |
+| [HACK-018](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/19) | P2 | M | Предварительный what-if на общей логике расчёта | HACK-007,008 |
+| [HACK-019](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/20) | P2 | M | Оценить полезность необязательного языкового помощника | HACK-007,010 |
+| [HACK-020](https://github.com/Makasinnnnnn/AlphaFutureHackaton/issues/21) | P2 | M | Ограниченный эксперимент с PDF/OCR и честным отказом | HACK-002,003,007 |
 
 ## Критерии карточек
 
