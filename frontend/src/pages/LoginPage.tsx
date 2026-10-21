@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ErrorBox } from "../components/ui";
+import { Brand, ErrorBox } from "../components/ui";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useAction, useResource } from "../lib/hooks";
@@ -26,16 +26,14 @@ export default function LoginPage() {
     <div className="login-wrap">
       <aside className="login-side">
         <div>
-          <div className="row gap-8" style={{ marginBottom: 48 }}>
-            <span className="brand-mark" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 32 32"><path d="M4 24h9l3-9 3 9h9" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </span>
-            <b>Кредитный кабинет для бизнеса</b>
-          </div>
-          <h1 className="display">Кредит без походов в банк и без догадок</h1>
-          <p>Выберите, на что нужны деньги, — кабинет подскажет продукт, сам подтянет обороты и реквизиты и покажет, на каком этапе заявка прямо сейчас.</p>
+          <div className="brand login-brand"><Brand /></div>
+          <span className="eyebrow">ФИНАНСИРОВАНИЕ БИЗНЕСА</span>
+          <h1 className="display">Бизнесу — деньги.<br />Вам — ясность.</h1>
+          <p>Сравните условия, добавьте документы и узнайте причину решения. Каждый следующий шаг — в одном кабинете.</p>
+          <div className="login-proof"><span>01</span><div><b>Условия без догадок</b><p>Платёж и переплата рядом, чтобы выбрать осознанно.</p></div></div>
+          <div className="login-proof"><span>02</span><div><b>Документы по делу</b><p>Видно, что нужно банку и что уже получено.</p></div></div>
         </div>
-        <div className="login-route" aria-hidden>
+        <div className="login-route" aria-label="Этапы финансирования">
           <div className="lit">Задача</div>
           <div className="lit">Заявка</div>
           <div className="lit">Проверка</div>
@@ -45,7 +43,9 @@ export default function LoginPage() {
       </aside>
 
       <section className="login-main">
-        <h2 style={{ fontSize: 24 }}>Вход</h2>
+        <span className="eyebrow">КРЕДИТНЫЙ МАРШРУТ</span>
+        <h2 style={{ fontSize: 30 }}>Вход в кабинет</h2>
+        <p className="muted small" style={{ marginTop: 8 }}>Демонстрация для хакатона. Выберите компанию или войдите по тестовой учётной записи.</p>
         <form onSubmit={submit} className="stack gap-16" style={{ marginTop: 20 }}>
           <div className="field">
             <label htmlFor="email">Email</label>
@@ -61,7 +61,7 @@ export default function LoginPage() {
 
         {!!demo.data?.length && (
           <div style={{ marginTop: 36 }}>
-            <h3>Тестовые учётные записи</h3>
+            <h3>Выберите демосценарий</h3>
             <p className="muted small">Каждая компания проводит заявку по своему сценарию. Пароль у всех: demo2026.</p>
             <div className="demo-list">
               {clients.map((d) => (
@@ -81,6 +81,8 @@ export default function LoginPage() {
             </div>
           </div>
         )}
+        <ErrorBox error={demo.error} onRetry={demo.reload} />
+        <p className="login-disclaimer">Синтетические компании, проверки, подпись и выдача. Реальные банковские операции не проводятся.</p>
       </section>
     </div>
   );

@@ -8,6 +8,7 @@ import ApplicationPage from "./pages/ApplicationPage";
 import Dashboard from "./pages/Dashboard";
 import LoginPage from "./pages/LoginPage";
 import NewApplication from "./pages/NewApplication";
+import HelpPage from "./pages/HelpPage";
 
 function Guard({ role, children }: { role: "CLIENT" | "ANALYST"; children: ReactNode }) {
   const { user, ready } = useAuth();
@@ -26,7 +27,14 @@ export default function App() {
       <Route path="/applications/:id" element={<Guard role="CLIENT"><ApplicationPage /></Guard>} />
       <Route path="/analyst" element={<Guard role="ANALYST"><AnalystQueue /></Guard>} />
       <Route path="/analyst/applications/:id" element={<Guard role="ANALYST"><AnalystApplication /></Guard>} />
+      <Route path="/help" element={<SignedIn><HelpPage /></SignedIn>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+}
+
+function SignedIn({ children }: { children: ReactNode }) {
+  const { user, ready } = useAuth();
+  if (!ready) return <Loading />;
+  return user ? <Layout>{children}</Layout> : <Navigate to="/login" replace />;
 }

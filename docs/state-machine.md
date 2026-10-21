@@ -10,6 +10,9 @@ stateDiagram-v2
 
     VALIDATION --> NEED_INFO: не хватает данных или документов
     NEED_INFO --> VALIDATION: клиент дополнил и отправил повторно
+    NEED_INFO --> MANUAL_REVIEW: новый документ в ответ на ручной дозапрос
+    SUBMITTED --> MANUAL_REVIEW: 3 технические ошибки
+    VALIDATION --> MANUAL_REVIEW: 3 технические ошибки
     VALIDATION --> ENRICHMENT: данные полные
 
     ENRICHMENT --> SCORING: ЕГРЮЛ, ФНС, БКИ ответили

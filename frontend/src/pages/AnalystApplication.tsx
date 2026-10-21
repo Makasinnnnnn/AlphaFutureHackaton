@@ -32,19 +32,26 @@ export default function AnalystApplication() {
           </div>
           <p>{app.number}: {app.product.name}, {money(app.amount)} на {months(app.term_months)}. Заявитель — {app.applicant.full_name}, {app.applicant.position?.toLowerCase()}.</p>
         </div>
+        {app.allowed_actions.length > 0 && <a className="btn ghost" href="#analyst-decision">К решению по заявке ↓</a>}
       </div>
+      <ErrorBox error={res.error} onRetry={res.reload} />
 
       <div className="grid-analyst">
         <div>
           <section className="panel">
-            <div className="tabs" role="tablist">
-              <button className="tab" role="tab" aria-selected={tab === "score"} onClick={() => setTab("score")}>Скоринг и решение</button>
-              <button className="tab" role="tab" aria-selected={tab === "checks"} onClick={() => setTab("checks")}>Проверки ({app.checks.length})</button>
-              <button className="tab" role="tab" aria-selected={tab === "audit"} onClick={() => setTab("audit")}>Аудит ({app.events.length})</button>
+            <div className="tabs" role="tablist" aria-label="Данные заявки">
+              {(["score", "checks", "audit"] as const).map((key, i, keys) => <button key={key} id={`analysis-tab-${key}`} className="tab" role="tab" tabIndex={tab === key ? 0 : -1} aria-selected={tab === key} aria-controls="analysis-panel" onClick={() => setTab(key)} onKeyDown={(e) => {
+                if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
+                e.preventDefault();
+                const next = keys[e.key === "Home" ? 0 : e.key === "End" ? keys.length - 1 : (i + (e.key === "ArrowRight" ? 1 : -1) + keys.length) % keys.length];
+                setTab(next); document.getElementById(`analysis-tab-${next}`)?.focus();
+              }}>{key === "score" ? "Скоринг и решение" : key === "checks" ? `Проверки (${app.checks.length})` : `Аудит (${app.events.length})`}</button>)}
             </div>
+            <div id="analysis-panel" role="tabpanel" aria-labelledby={`analysis-tab-${tab}`} tabIndex={0}>
             {tab === "score" && <ScoreTab app={app} />}
             {tab === "checks" && <ChecksTab app={app} />}
             {tab === "audit" && <AuditTab app={app} />}
+            </div>
           </section>
 
           <section className="panel">
@@ -84,7 +91,7 @@ export default function AnalystApplication() {
           )}
         </div>
 
-        <aside className="sticky">
+        <aside className="sticky" id="analyst-decision">
           {app.allowed_actions.length > 0 ? <DecisionForm app={app} onDone={res.setData} /> : (
             <section className="panel">
               <div className="panel-title"><h3>Маршрут</h3></div>
@@ -131,9 +138,20 @@ function ScoreTab({ app }: { app: AA }) {
           {d.recommendation && <div className="callout info">{d.recommendation}</div>}
           {d.offer && <p>Предложение: {d.offer.product_name}, {money(d.offer.amount)} на {months(d.offer.term_months)} под {pct(d.offer.rate)}, платёж {money(d.offer.monthly_payment)}.</p>}
           {d.limits && Object.keys(d.limits).length > 0 && (
+            <div>
+            <p className="small muted">Лимиты исходного запроса</p>
             <dl className="kv-list">
               {Object.entries(d.limits).map(([k, v]) => <Fragment key={k}><dt>{LIMIT_NAME[k] ?? k}</dt><dd className="num">{money(v)}</dd></Fragment>)}
             </dl>
+            </div>
+          )}
+          {d.offer_limits && Object.keys(d.offer_limits).length > 0 && (
+            <div>
+              <p className="small muted">Лимиты на срок предложения ({d.offer?.term_months} мес.)</p>
+              <dl className="kv-list">
+                {Object.entries(d.offer_limits).map(([k, v]) => <Fragment key={k}><dt>{LIMIT_NAME[k] ?? k}</dt><dd className="num">{money(v)}</dd></Fragment>)}
+              </dl>
+            </div>
           )}
           {d.rules_fired && <p className="small muted">Сработавшие правила: {d.rules_fired.join(", ")}</p>}
           {d.analyst_comment && <p className="small">Комментарий аналитика: {d.analyst_comment}</p>}
@@ -196,6 +214,8 @@ function DecisionForm({ app, onDone }: { app: AA; onDone: (a: AA) => void }) {
   useEffect(() => { act.setError(null); }, [action]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const withTerms = action === "APPROVE" || action === "COUNTER_OFFER";
+  const validTerms = !withTerms || (Number.isFinite(Number(amount)) && Number(amount) > 0 && Number.isInteger(Number(term)) && Number(term) > 0 && (!rate || (Number.isFinite(Number(rate)) && Number(rate) > 0)));
+  const validRequest = action !== "REQUEST_INFO" || items.trim().length > 0;
   const submit = () => act.run(async () => onDone(await api.decide(app.id, {
     action, version: app.version, comment,
     amount: withTerms ? Number(amount) : undefined,
@@ -233,7 +253,7 @@ function DecisionForm({ app, onDone }: { app: AA; onDone: (a: AA) => void }) {
           placeholder={action === "REJECT" ? "Причина отказа — клиент увидит этот текст" : "Попадёт в аудит и будет показано клиенту"} />
       </div>
       <ErrorBox error={act.error} />
-      <button className={`btn ${action === "REJECT" ? "" : "primary"} block`} disabled={act.busy || comment.trim().length < 3} onClick={submit}>
+      <button className={`btn ${action === "REJECT" ? "" : "primary"} block`} disabled={act.busy || comment.trim().length < 3 || !validTerms || !validRequest} onClick={submit}>
         {labels[action]}
       </button>
     </section>

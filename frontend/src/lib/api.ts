@@ -92,6 +92,8 @@ export interface Decision {
   analyst_comment?: string | null;
   recommendation?: string | null;
   limits?: Record<string, number>;
+  offer_limits?: Record<string, number>;
+  requested_terms?: { rate: number; monthly_payment: number; is_overdraft: boolean } | null;
   rules_fired?: string[];
   system_decision?: { outcome?: string; offer?: Offer | null; recommendation?: string | null };
 }
@@ -149,7 +151,7 @@ export interface Application {
   estimated_monthly_payment: number | null;
   collateral: { equipment_name?: string; equipment_cost?: number; supplier?: string } | null;
   financials: Financials | null;
-  missing_items: { code: string; text: string }[] | null;
+  missing_items: { code: string; text: string; document_ids_before_request?: number[] }[] | null;
   analyst_comment: string | null;
   decision: Decision | null;
   agreement: Agreement | null;

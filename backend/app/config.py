@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     pipeline_poll_interval_sec: float = 1.0
     pipeline_max_enrichment_attempts: int = 3
     pipeline_enrichment_retry_delay_sec: float = 3.0
+    pipeline_max_error_attempts: int = 3
+    pipeline_error_retry_delay_sec: float = 10.0
 
     # Документы
     max_upload_bytes: int = 5 * 1024 * 1024

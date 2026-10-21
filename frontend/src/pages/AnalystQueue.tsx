@@ -22,7 +22,7 @@ export default function AnalystQueue() {
   const list = useResource(() => api.queue(statuses, q), [filter, q], () => 4000);
   const stats = useResource(api.stats, [], () => 6000);
   const s = stats.data;
-  const count = (st: string[]) => (st.length ? st.reduce((n, x) => n + (s?.by_status[x] ?? 0), 0) : s?.total ?? 0);
+  const count = (st: string[]) => !s ? "—" : st.length ? st.reduce((n, x) => n + (s.by_status[x] ?? 0), 0) : s.total;
 
   return (
     <>
@@ -32,6 +32,7 @@ export default function AnalystQueue() {
           <p>Заявки, которые конвейер не смог решить автоматически, попадают в «Ждут решения».</p>
         </div>
       </div>
+      <ErrorBox error={stats.error} onRetry={stats.reload} />
 
       {s && (
         <div className="stats-row">
@@ -57,16 +58,16 @@ export default function AnalystQueue() {
         {list.loading && !list.data && <Loading />}
         {list.data?.length === 0 && <div className="empty"><h3>Здесь пусто</h3><p>Заявок с таким статусом нет.</p></div>}
         {!!list.data?.length && (
-          <div className="table-wrap">
+          <div className="table-wrap" role="region" aria-label="Таблица заявок, доступна горизонтальная прокрутка" tabIndex={0}>
             <table className="table">
-              <thead>
+              <caption className="sr-only">Заявки по выбранному статусу. Откройте номер для рассмотрения.</caption><thead>
                 <tr><th>Заявка</th><th>Клиент</th><th>Продукт</th><th className="right">Сумма</th><th className="right">Балл</th><th>Статус</th><th>Изменена</th></tr>
               </thead>
               <tbody>
                 {list.data.map((a) => (
                   <tr key={a.id} className="clickable" tabIndex={0} onClick={() => nav(`/analyst/applications/${a.id}`)}
                     onKeyDown={(e) => e.key === "Enter" && nav(`/analyst/applications/${a.id}`)}>
-                    <td className="num">{a.number}</td>
+                    <td className="num"><a className="queue-link" href={`/analyst/applications/${a.id}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); nav(`/analyst/applications/${a.id}`); }}>{a.number}</a></td>
                     <td><div>{a.company_name}</div><div className="muted small num">ИНН {a.company_inn}</div></td>
                     <td>{a.product_name}<div className="muted small">{months(a.term_months)}</div></td>
                     <td className="right num">{money(a.amount)}</td>
