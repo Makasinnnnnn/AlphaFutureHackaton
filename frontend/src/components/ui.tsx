@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { api, type ApiError, type Financials, type TimelineItem } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { dateTime, monthLabel, money, STATUS_TONE } from "../lib/format";
-import { useResource } from "../lib/hooks";
+import { useAction, useResource } from "../lib/hooks";
 
 export function StatusChip({ code, title }: { code: string; title: string }) {
   return <span className={`chip ${STATUS_TONE[code] ?? "neutral"}`}>{title}</span>;
@@ -21,25 +21,32 @@ export function ErrorBox({ error, onRetry }: { error: ApiError | string | null; 
 }
 
 export function Loading() {
-  return <div className="skeleton" aria-label="Загрузка" />;
+  return <div className="skeleton" role="status"><span className="sr-only">Загружаем данные…</span></div>;
+}
+
+export function Brand() {
+  return <><span className="route-mark" aria-hidden="true">А<span /></span><span className="brand-copy">Кредитный маршрут<small>кабинет предпринимателя</small></span></>;
 }
 
 function Bell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data, reload } = useResource(api.notifications, [], () => 5000);
+  const { data, error, reload } = useResource(api.notifications, [], () => 5000);
+  const markRead = useAction();
   const { user } = useAuth();
 
   useEffect(() => {
     const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    const escape = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", escape); };
   }, []);
 
   const toggle = async () => {
     const next = !open;
     setOpen(next);
-    if (next && data?.unread) { await api.readAll(); setTimeout(reload, 1500); }
+    if (next && data?.unread) await markRead.run(async () => { await api.readAll(); await reload(); });
   };
   const base = user?.role === "ANALYST" ? "/analyst/applications" : "/applications";
 
@@ -51,6 +58,8 @@ function Bell() {
       </button>
       {open && (
         <div className="popover" role="dialog" aria-label="Уведомления">
+          <div className="panel-title"><b>Уведомления</b><button className="btn text small" onClick={() => setOpen(false)} aria-label="Закрыть уведомления">Закрыть</button></div>
+          <ErrorBox error={error || markRead.error} onRetry={reload} />
           {!data?.items.length && <p className="muted small" style={{ padding: 12 }}>Здесь появятся сообщения о движении ваших заявок.</p>}
           {data?.items.map((n) => (
             <Link key={n.id} to={n.application_id ? `${base}/${n.application_id}` : "#"} className={`note ${n.is_read ? "" : "unread"}`} onClick={() => setOpen(false)}>
@@ -69,26 +78,25 @@ export function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const isAnalyst = user?.role === "ANALYST";
+  const home = isAnalyst ? "/analyst" : "/";
+  const links = isAnalyst
+    ? [{ to: "/analyst", label: "Очередь заявок", symbol: "▤" }, { to: "/help", label: "О прототипе", symbol: "?" }]
+    : [{ to: "/", label: "Мои заявки", symbol: "▤" }, { to: "/new", label: "Новая заявка", symbol: "+" }, { to: "/help", label: "Помощь", symbol: "?" }];
   return (
-    <>
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">Перейти к содержимому</a>
+      <aside className="app-sidebar">
+        <Link to={home} className="brand"><Brand /></Link>
+        <div className="sidebar-label">{isAnalyst ? "РАБОТА С ЗАЯВКАМИ" : "ФИНАНСИРОВАНИЕ БИЗНЕСА"}</div>
+        <nav className="side-nav" aria-label="Разделы">
+          {links.map((link) => <NavLink key={link.to} to={link.to} end><span aria-hidden="true">{link.symbol}</span>{link.label}</NavLink>)}
+        </nav>
+        <div className="sidebar-foot"><span className="demo-indicator" />Демонстрационный кабинет<p>Синтетические данные.<br />Реальные операции не проводятся.</p></div>
+      </aside>
       <header className="topbar">
         <div className="topbar-inner">
-          <Link to={isAnalyst ? "/analyst" : "/"} className="brand">
-            <span className="brand-mark" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 32 32"><path d="M4 24h9l3-9 3 9h9" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </span>
-            <span>Кредитный кабинет<small>{isAnalyst ? "рабочее место аналитика" : "для бизнеса"}</small></span>
-          </Link>
-          <nav className="topnav" aria-label="Разделы">
-            {isAnalyst ? (
-              <NavLink to="/analyst" end>Очередь заявок</NavLink>
-            ) : (
-              <>
-                <NavLink to="/" end>Мои заявки</NavLink>
-                <NavLink to="/new">Получить финансирование</NavLink>
-              </>
-            )}
-          </nav>
+          <Link className="mobile-brand brand" to={home}><Brand /></Link>
+          <div className="workspace-name">{isAnalyst ? "Рабочее место аналитика" : "Кредитный кабинет"}<small>{isAnalyst ? "Решение с объяснением и историей" : "От заявки до графика платежей"}</small></div>
           <div className="spacer" />
           <Bell />
           <div className="who">
@@ -98,8 +106,9 @@ export function Layout({ children }: { children: ReactNode }) {
           <button className="btn text" onClick={() => { logout(); nav("/login"); }}>Выйти</button>
         </div>
       </header>
-      <main className="page">{children}</main>
-    </>
+      <nav className="mobile-nav" aria-label="Мобильная навигация">{links.map((link) => <NavLink key={link.to} to={link.to} end>{link.label}</NavLink>)}</nav>
+      <main className="page" id="main-content" tabIndex={-1}>{children}<footer className="workspace-footer">Учебный прототип · Не является сервисом Альфа-Банка или предложением кредита</footer></main>
+    </div>
   );
 }
 

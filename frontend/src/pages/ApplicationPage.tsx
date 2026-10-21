@@ -34,6 +34,8 @@ export default function ApplicationPage() {
           <p>Заявка {app.number}{app.submitted_at ? `, отправлена ${dateTime(app.submitted_at)}` : ""}</p>
         </div>
       </div>
+      <div className="application-summary" aria-label="Основные параметры заявки"><div><span>Запрошенная сумма</span><b className="num">{money(app.amount)}</b></div><div><span>Срок запроса</span><b>{months(app.term_months)}</b></div><div><span>Компания</span><b>{app.company.name}</b></div></div>
+      <ErrorBox error={res.error} onRetry={res.reload} />
 
       <div className="grid-app">
         <aside className="panel sticky">
@@ -41,7 +43,7 @@ export default function ApplicationPage() {
           <Route items={app.timeline} live={live} />
         </aside>
 
-        <div>
+        <div className={`application-content state-${app.status.code.toLowerCase()}`}>
           <StepPanel app={app} onChange={set} reload={res.reload} />
           <Details app={app} />
         </div>
@@ -54,14 +56,15 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
   const code = app.status.code;
   const act = useAction();
   const cancel = (label: string) => (
-    <button className="btn danger" disabled={act.busy} onClick={() => {
+    <div className="cancel-action"><button className="btn danger" disabled={act.busy} onClick={() => {
       if (window.confirm(`${label}? Это действие нельзя отменить.`)) act.run(async () => onChange(await api.cancel(app.id)));
-    }}>{label}</button>
+    }}>{label}</button><ErrorBox error={act.error} /></div>
   );
 
   if (LIVE.has(code) || code === "MANUAL_REVIEW") {
     return (
       <section className="panel" aria-live="polite">
+        <div className="processing-label"><span className={code === "MANUAL_REVIEW" ? "process-dot" : "process-dot running"} /><span>{code === "MANUAL_REVIEW" ? "Проверка специалистом" : "Заявка в обработке"}</span></div>
         <h2>{app.status.title}</h2>
         <p className="muted" style={{ marginTop: 6 }}>{app.status.what}</p>
         <p style={{ marginTop: 14 }}>{app.status.next}</p>
@@ -79,11 +82,11 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
     const counter = code === "COUNTER_OFFER";
     const productChanged = offer.product_code !== app.product.code;
     return (
-      <section className="panel stack gap-16">
+      <section className="panel stack gap-16 decision-panel">
         <div>
           <h2>{counter ? "Банк предлагает другие условия" : "Кредит одобрен"}</h2>
           <p className="muted" style={{ marginTop: 4 }}>
-            {counter ? "Запрошенные условия не подошли, но вот что банк готов выдать прямо сейчас." : "Условия совпадают с запрошенными. Осталось принять предложение и подписать договор."}
+            {counter ? "Сравните условия: меньший платёж не всегда означает меньшую общую переплату." : "Условия совпадают с запрошенными. Проверьте предложение и перейдите к демонстрационному договору."}
           </p>
         </div>
         {counter ? (
@@ -112,7 +115,7 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
         {counter && !productChanged && app.decision?.requested_terms && !app.decision.requested_terms.is_overdraft && offer.product_code !== "OVERDRAFT" && (
           <section className="terms-comparison" aria-label="Стоимость запрошенных и предложенных условий">
             <h3>Сравните платёж и полную стоимость</h3>
-            <div className="table-wrap">
+            <div className="table-wrap" role="region" aria-label="Сравнение стоимости, доступна горизонтальная прокрутка" tabIndex={0}>
               <table className="terms-table">
                 <thead><tr><th scope="col">Условие</th><th scope="col">Ваш запрос</th><th scope="col">Предложение</th></tr></thead>
                 <tbody>
@@ -144,6 +147,7 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
     const ag = app.agreement;
     return (
       <section className="panel stack gap-16">
+        <span className="result-symbol" aria-hidden="true">✓</span><h2>Финансирование оформлено</h2>
         <div className="callout good">Договор {ag.number} подписан {dateTime(ag.signed_at)}. Деньги зачислены на счёт {ag.disbursement?.account} (симуляция).</div>
         <Money value={ag.amount} size="xl" />
         <dl className="kv">
@@ -280,6 +284,8 @@ function SigningPanel({ app, onChange, cancel }: { app: Application; onChange: (
   return (
     <section className="panel stack gap-16">
       <h2>Подпишите договор</h2>
+      <p className="muted small">Проверьте условия и полный график. Подписание и выдача в этом кабинете — симуляция.</p>
+      <dl className="kv signing-totals"><div><dt>Сумма кредита</dt><dd>{money(ag.amount)}</dd></div><div><dt>Все платежи</dt><dd>{money(ag.total_payments)}</dd></div><div><dt>Переплата</dt><dd>{money(ag.overpayment)}</dd></div></dl>
       <div className="agreement">
         <b>Кредитный договор {ag.number}</b>
         <p className="small muted">Сформирован {date(ag.created_at)}</p>
@@ -312,12 +318,13 @@ function SigningPanel({ app, onChange, cancel }: { app: Application; onChange: (
 }
 
 function Schedule({ app, preview = false }: { app: Application; preview?: boolean }) {
+  const [showAll, setShowAll] = useState(false);
   const rows = app.agreement?.schedule ?? [];
-  const shown = preview ? rows.slice(0, 3) : rows;
+  const shown = preview && !showAll ? rows.slice(0, 3) : rows;
   return (
     <details open={!preview}>
       <summary>График платежей ({rows.length} платежей)</summary>
-      <div className="table-wrap">
+      <div className="table-wrap" role="region" aria-label="График платежей, доступна горизонтальная прокрутка" tabIndex={0}>
         <table className="table" style={{ marginTop: 8 }}>
           <thead><tr><th>№</th><th>Дата</th><th className="right">Платёж</th><th className="right">Основной долг</th><th className="right">Проценты</th><th className="right">Остаток</th></tr></thead>
           <tbody>
@@ -326,7 +333,7 @@ function Schedule({ app, preview = false }: { app: Application; preview?: boolea
             ))}
           </tbody>
         </table>
-        {preview && rows.length > 3 && <p className="hint" style={{ marginTop: 6 }}>…и ещё {rows.length - 3}. Полный график будет в карточке после подписания.</p>}
+        {preview && !showAll && rows.length > 3 && <button className="btn text" onClick={() => setShowAll(true)}>Показать весь график · ещё {rows.length - 3}</button>}
       </div>
     </details>
   );

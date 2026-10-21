@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ErrorBox, Loading, TurnoverBars } from "../components/ui";
 import { DocumentsBlock } from "../components/Documents";
 import { api, type Application, type Product, type RecommendResult } from "../lib/api";
@@ -53,10 +53,11 @@ export default function NewApplication() {
     if (!product) return 0;
     return product.code === "OVERDRAFT" ? (amount * product.base_rate) / 100 / 12 : annuity(amount, product.base_rate, term);
   }, [product, amount, term]);
+  const validTerms = !!product && Number.isFinite(amount) && amount >= product.min_amount && amount <= product.max_amount && Number.isInteger(term) && term >= product.min_term_months && term <= product.max_term_months;
 
   const saveDraft = () =>
     act.run(async () => {
-      if (!product) return;
+      if (!product || !validTerms) return;
       const body = {
         product_code: product.code,
         purpose,
@@ -84,19 +85,22 @@ export default function NewApplication() {
     });
 
   if (purposes.loading || products.loading) return <Loading />;
+  if (purposes.error || products.error) return <ErrorBox error={purposes.error || products.error} onRetry={() => { purposes.reload(); products.reload(); }} />;
 
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div className="application-wizard">
+      <Link to="/" className="back">← К заявкам</Link>
+      <span className="eyebrow">НОВАЯ ЗАЯВКА</span>
       <h1>Получить финансирование</h1>
       <p className="muted" style={{ margin: "6px 0 20px" }}>Черновик сохраняется после второго шага — к нему можно вернуться из списка заявок.</p>
       <ol className="steps">
         {STEPS.map((s, i) => (
-          <li key={s} className={i === step ? "on" : i < step ? "past" : ""}>
-            <span className="n">{i + 1}</span>{s}
+          <li key={s} className={i === step ? "on" : i < step ? "past" : ""} aria-current={i === step ? "step" : undefined}>
+            <button className="step-button" disabled={i >= step} onClick={() => setStep(i)}><span className="n">{i < step ? "✓" : i + 1}</span>{s}</button>
           </li>
         ))}
       </ol>
-
+      <div className="wizard-grid"><div className="wizard-content">
       {step === 0 && (
         <section className="panel stack gap-24">
           <div>
@@ -105,7 +109,7 @@ export default function NewApplication() {
           </div>
           <div className="purpose-grid">
             {purposes.data?.map((p) => (
-              <button key={p.code} className="choice" aria-pressed={purpose === p.code} onClick={() => pickPurpose(p.code)}>
+              <button key={p.code} className="choice" disabled={act.busy} aria-pressed={purpose === p.code} onClick={() => pickPurpose(p.code)}>
                 <span className="choice-title">{p.title}</span>
                 <span className="choice-hint">{p.hint}</span>
               </button>
@@ -208,7 +212,7 @@ export default function NewApplication() {
           </div>
           <ErrorBox error={act.error} />
           <div className="row" style={{ justifyContent: "flex-end" }}>
-            <button className="btn primary" onClick={saveDraft} disabled={act.busy}>{act.busy ? "Сохраняем…" : "Сохранить и продолжить"}</button>
+            <button className="btn primary" onClick={saveDraft} disabled={act.busy || !validTerms}>{act.busy ? "Сохраняем…" : "Сохранить и продолжить"}</button>
           </div>
         </section>
       )}
@@ -216,7 +220,7 @@ export default function NewApplication() {
       {step === 2 && draft && (
         <section className="panel stack gap-24">
           <h2>Данные о бизнесе</h2>
-          {fin.data ? (
+          {fin.loading ? <Loading /> : fin.error ? <ErrorBox error={fin.error} onRetry={fin.reload} /> : fin.data ? (
             <>
               <div className="callout good">Компания обслуживается в банке — обороты по счёту уже в заявке. Вводить выручку не нужно.</div>
               <TurnoverBars fin={fin.data} />
@@ -228,13 +232,13 @@ export default function NewApplication() {
               Можно отправить заявку и без неё: банк попросит выписку на этапе проверки.
             </div>
           )}
-          {(!fin.data || draft.product.requires_collateral) && (
+          {!fin.loading && !fin.error && (!fin.data || draft.product.requires_collateral) && (
             <DocumentsBlock app={draft} onChange={setDraft} needStatement={!fin.data} />
           )}
           <ErrorBox error={act.error} />
           <div className="row" style={{ justifyContent: "space-between" }}>
             <button className="btn text" onClick={() => setStep(1)}>Назад</button>
-            <button className="btn primary" onClick={() => setStep(3)}>Продолжить</button>
+            <button className="btn primary" disabled={fin.loading || !!fin.error} onClick={() => setStep(3)}>Продолжить</button>
           </div>
         </section>
       )}
@@ -250,7 +254,7 @@ export default function NewApplication() {
             <div><dt>Обороты</dt><dd>{draft.financials?.months_count ? `${months(draft.financials.months_count)}, в среднем ${money(draft.financials.avg_monthly_inflow)}` : "Попросим выписку на проверке"}</dd></div>
             <div><dt>Документы</dt><dd>{draft.documents.length ? draft.documents.map((d) => d.filename).join(", ") : "Нет"}</dd></div>
           </dl>
-          <p className="small muted">После отправки банк проверит компанию в реестрах ЕГРЮЛ/ЕГРИП и сервисе ФНС «Прозрачный бизнес», запросит кредитную историю и рассчитает условия. Обычно это занимает меньше минуты, статус обновляется прямо на странице заявки.</p>
+          <p className="small muted">После отправки прототип проверит компанию и кредитную историю через локальные симуляторы ЕГРЮЛ, ФНС и БКИ. Ход проверки и результат появятся на странице заявки.</p>
           <label className="check">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>Даю согласие на обработку данных компании и запрос кредитной истории в бюро кредитных историй</span>
@@ -262,6 +266,12 @@ export default function NewApplication() {
           </div>
         </section>
       )}
+      </div><aside className="wizard-summary sticky panel">
+        <span className="eyebrow">ВАША ЗАЯВКА</span>
+        <h2>{product?.name ?? "Начнём с задачи бизнеса"}</h2>
+        {product ? <><div className="summary-amount num">{money(amount)}</div><dl className="kv"><div><dt>Срок</dt><dd>{months(term)}</dd></div><div><dt>Ставка от</dt><dd>{pct(product.base_rate)}</dd></div><div><dt>{product.code === "OVERDRAFT" ? "Проценты при полном лимите" : "Платёж в месяц ≈"}</dt><dd className="num">{validTerms ? money(payment) : "Уточните сумму"}</dd></div></dl><p className="hint">Предварительный расчёт без комиссий. Условия после проверки могут измениться.</p></> : <p className="muted small">Выберите цель — покажем продукты, сумму и срок. Здесь будет предварительный расчёт.</p>}
+        <div className="summary-note"><b>{draft ? "Черновик сохранён" : "Можно продолжить позже"}</b><p>{draft ? `Заявка ${draft.number} доступна в вашем кабинете.` : "Черновик появится в кабинете после выбора и сохранения условий."}</p></div>
+      </aside></div>
     </div>
   );
 }
