@@ -76,3 +76,12 @@ Five node:test regression cases pass: offline build, cached files, TLS rejection
 invalid download rejection and successful explicit download. The actual prebuild
 hook passes without network access. Full Docker build remains unverified here.
 This supersedes the earlier automatic-download description.
+
+## Company, input and live-summary corrections
+
+- Company identifiers now display original digits without inserted spacing. Dedicated label/value columns wrap long activity and director text without overlap.
+- Text fields share a grey rectangular surface with a small label inside at the top and the value below; currency suffixes remain aligned on the right. Applied to financing and login inputs.
+- Financing sidebar is now authorized and implemented: purpose, product, preliminary rate, live amount/term/payment, financial data and document count. Previous sections have edit links. Mobile/tablet uses a collapsible summary before the form.
+- Steps use one horizontal row for number and title. Earlier steps are keyboard-accessible buttons; future steps remain disabled. Returning does not clear entered state, and edits reset submission consent.
+- Browser icon assets include ICO, 32 px PNG, SVG and Apple touch PNG using the same original Alfa Laboratory geometry (white mark on red). New asset names invalidate the previous SVG URL.
+- Verified TS/TSX syntax transpilation for every frontend source file using the available TypeScript compiler. This is not a full semantic typecheck or production build. Raster icon inspected visually; PNG/ICO dimensions checked. Docker/browser review of this build is still pending.

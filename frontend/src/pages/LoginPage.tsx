@@ -1,3 +1,4 @@
+import { TextField } from "../components/TextField";
 import { BrandMark } from "../components/BrandMark";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -46,14 +47,8 @@ export default function LoginPage() {
       <section className="login-main">
         <h2 style={{ fontSize: 24 }}>Вход</h2>
         <form onSubmit={submit} className="stack gap-16" style={{ marginTop: 20 }}>
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input id="email" className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div className="field">
-            <label htmlFor="password">Пароль</label>
-            <input id="password" className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </div>
+          <TextField id="email" label="Email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <TextField id="password" label="Пароль" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <ErrorBox error={error} />
           <button className="btn primary" disabled={busy}>{busy ? "Входим…" : "Войти"}</button>
         </form>

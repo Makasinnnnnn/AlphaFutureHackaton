@@ -1,6 +1,8 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { ErrorBox, Loading, TurnoverBars } from "../components/ui";
+import { ApplicationSummary } from "../components/ApplicationSummary";
+import { TextField } from "../components/TextField";
 import { DocumentsBlock } from "../components/Documents";
 import { api, type Application, type Product, type RecommendResult } from "../lib/api";
 import { annuity, money, months, pct, uid } from "../lib/format";
@@ -86,13 +88,17 @@ export default function NewApplication() {
   if (purposes.loading || products.loading) return <Loading />;
 
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div className="financing-page">
       <h1>Получить финансирование</h1>
       <p className="muted" style={{ margin: "6px 0 20px" }}>Черновик сохраняется после второго шага — к нему можно вернуться из списка заявок.</p>
+      <div className="financing-layout">
+      <div className="financing-main">
       <ol className="steps">
         {STEPS.map((s, i) => (
-          <li key={s} aria-current={i === step ? "step" : undefined} className={i === step ? "on" : i < step ? "past" : ""}>
-            <span className="n">{i < step ? "✓" : i + 1}</span><span>{s}</span>
+          <li key={s} className={i === step ? "on" : i < step ? "past" : ""}>
+            <button type="button" className="step-button" aria-current={i === step ? "step" : undefined} disabled={i >= step || act.busy} onClick={() => { setConsent(false); setStep(i); }}>
+              <span className="n" aria-hidden="true">{i + 1}</span><span>{s}</span>
+            </button>
           </li>
         ))}
       </ol>
@@ -105,18 +111,15 @@ export default function NewApplication() {
           </div>
           <div className="purpose-grid">
             {purposes.data?.map((p) => (
-              <button key={p.code} className="choice" aria-pressed={purpose === p.code} onClick={() => pickPurpose(p.code)}>
+              <button key={p.code} className="choice" aria-pressed={purpose === p.code} disabled={act.busy} onClick={() => pickPurpose(p.code)}>
                 <span className="choice-title">{p.title}</span>
                 <span className="choice-hint">{p.hint}</span>
               </button>
             ))}
           </div>
-          <div className="field">
-            <label htmlFor="describe">Или опишите своими словами</label>
-            <div className="row">
-              <input id="describe" className="input" placeholder="Например: покупатели платят через 60 дней, а аренду платить сейчас" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && text.trim() && describe()} />
-              <button className="btn ghost" onClick={describe} disabled={!text.trim() || act.busy}>Подобрать</button>
-            </div>
+          <div className="describe-row">
+            <TextField id="describe" label="Или опишите задачу своими словами" placeholder="Например: закрыть кассовый разрыв" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && text.trim() && !act.busy && describe()} />
+            <button className="btn ghost" onClick={describe} disabled={!text.trim() || act.busy}>Подобрать</button>
           </div>
           <ErrorBox error={act.error} />
 
@@ -157,8 +160,7 @@ export default function NewApplication() {
             <button className="btn text" onClick={() => setStep(0)}>Сменить продукт</button>
           </div>
           <div className="field">
-            <label htmlFor="amount-value">{product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма"}</label>
-            <div className="amount-input"><input id="amount-value" className="input num" inputMode="numeric" value={amount.toLocaleString("ru-RU")} onChange={(e) => { const digits = e.target.value.replace(/[^0-9]/g, ""); if (digits.length <= 12) setAmount(Number(digits)); }} onBlur={() => setAmount(Math.min(product.max_amount, Math.max(product.min_amount, amount)))} aria-label="Сумма в рублях" /><span>₽</span></div>
+            <TextField id="amount-value" label={product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма кредита"} suffix="₽" className="num" inputMode="numeric" value={amount.toLocaleString("ru-RU")} onChange={(e) => { const digits = e.target.value.replace(/[^0-9]/g, ""); if (digits.length <= 12) setAmount(Number(digits)); }} onBlur={() => setAmount(Math.min(product.max_amount, Math.max(product.min_amount, amount)))} />
             <input id="amount" aria-label="Сумма кредита — ползунок" type="range" min={product.min_amount} max={product.max_amount} step={50_000} value={amount} style={{ "--range-progress": `${Math.min(100, Math.max(0, (amount - product.min_amount) / (product.max_amount - product.min_amount) * 100))}%` } as CSSProperties} onChange={(e) => setAmount(Number(e.target.value))} />
             <span className="hint">От {money(product.min_amount)} до {money(product.max_amount)}</span>
           </div>
@@ -175,19 +177,10 @@ export default function NewApplication() {
           {product.requires_collateral && (
             <div className="stack gap-16">
               <h3>Что покупаете</h3>
-              <div className="field">
-                <label htmlFor="eq-name">Оборудование</label>
-                <input id="eq-name" className="input" placeholder="Например: фрезерный станок с ЧПУ" value={equipment.equipment_name} onChange={(e) => setEquipment({ ...equipment, equipment_name: e.target.value })} />
-              </div>
-              <div className="row wrap gap-16">
-                <div className="field grow">
-                  <label htmlFor="eq-cost">Стоимость, ₽</label>
-                  <input id="eq-cost" className="input num" type="number" min={0} value={equipment.equipment_cost} onChange={(e) => setEquipment({ ...equipment, equipment_cost: e.target.value })} />
-                </div>
-                <div className="field grow">
-                  <label htmlFor="eq-sup">Поставщик</label>
-                  <input id="eq-sup" className="input" value={equipment.supplier} onChange={(e) => setEquipment({ ...equipment, supplier: e.target.value })} />
-                </div>
+              <TextField id="eq-name" label="Оборудование" placeholder="Например: фрезерный станок с ЧПУ" value={equipment.equipment_name} onChange={(e) => setEquipment({ ...equipment, equipment_name: e.target.value })} />
+              <div className="equipment-fields">
+                <TextField id="eq-cost" label="Стоимость" suffix="₽" className="num" type="number" min={0} value={equipment.equipment_cost} onChange={(e) => setEquipment({ ...equipment, equipment_cost: e.target.value })} />
+                <TextField id="eq-sup" label="Поставщик" value={equipment.supplier} onChange={(e) => setEquipment({ ...equipment, supplier: e.target.value })} />
               </div>
               <p className="hint">Банк финансирует до 90% стоимости, остальное — первоначальный взнос.</p>
             </div>
@@ -260,6 +253,15 @@ export default function NewApplication() {
           </div>
         </section>
       )}
+      </div>
+      <ApplicationSummary
+        purpose={purposes.data?.find((p) => p.code === purpose)?.title ?? rec?.purpose_title ?? (rec ? text.trim() || null : null)}
+        product={product} amount={amount} term={term} payment={payment}
+        financials={draft?.financials ?? fin.data} documents={draft?.documents.length ?? 0}
+        businessReached={!!draft} step={step} busy={act.busy}
+        onEdit={(target) => { setConsent(false); setStep(target); }}
+      />
+      </div>
     </div>
   );
 }
