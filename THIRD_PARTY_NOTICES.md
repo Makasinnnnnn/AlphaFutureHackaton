@@ -68,7 +68,7 @@ https://github.com/alfa-laboratory/icons/blob/9ffde4b1d37abdacce63e45121a3fa9ce8
 The logo remains a trademark of its respective owner; usage in this hackathon
 was explicitly authorized by the user. The filled notification bell uses BellMIcon from the same repository (packages/glyph/src/BellMIcon.tsx).
 
-Styrene UI font files are obtained at build time from the official bank CDN,
+Styrene UI font files can be obtained explicitly before building from the official bank CDN,
 using URLs documented by Alfa Laboratory:
 https://github.com/alfa-laboratory/core-components/blob/master/docs/6.typography.stories.mdx
 Styrene is a proprietary typeface, not covered by the icons package's MIT license.

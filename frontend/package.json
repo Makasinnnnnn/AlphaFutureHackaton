@@ -10,7 +10,9 @@
     "prebuild": "npm run prepare:fonts",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "download:fonts": "node scripts/prepare-fonts.mjs --download",
+    "test:fonts": "node --test scripts/prepare-fonts.test.mjs"
   },
   "dependencies": {
     "@fontsource/onest": "5.3.1",

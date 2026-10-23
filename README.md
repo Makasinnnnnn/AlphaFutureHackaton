@@ -186,11 +186,15 @@ python scripts/e2e_check.py      # сквозная проверка работ�
 ### UI fonts and design corrections
 
 The UI uses Styrene UI from the official URLs published by Alfa Laboratory.
-`npm run dev` and `npm run build` prepare the three WOFF2 weights automatically
-via `frontend/scripts/prepare-fonts.mjs`. First preparation requires build-time
-network access to `alfabank.gcdn.co`; subsequent builds reuse valid local files
-in `frontend/public/fonts`. The finished application loads fonts locally and
-requires no font CDN. Use is based on the hackathon permission stated by the team.
+`npm run dev` and `npm run build` check local WOFF2 files without network access.
+If Styrene UI is missing, the UI uses bundled Onest and builds successfully.
+To fetch the official fonts explicitly, run `cd frontend` followed by
+`npm run download:fonts` on a host with access to `alfabank.gcdn.co`, then rebuild.
+You can also place authorized WOFF2 files named `styrene-ui_regular.woff2`,
+`styrene-ui_medium.woff2`, and `styrene-ui_bold.woff2` in `frontend/public/fonts`.
+The finished application loads fonts locally and requires no font CDN.
+Use is based on the hackathon permission stated by the team.
+Regression checks: `cd frontend` followed by `npm run test:fonts`.
 
 To rebuild the edited UI when port 8080 is occupied:
 

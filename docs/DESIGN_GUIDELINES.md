@@ -65,3 +65,14 @@ Dependency installation attempted offline; npm cache lacked required packages. D
 - Financing sidebar: intentionally deferred by user until this correction pass is reviewed and committed; no sidebar content added.
 
 Validation: node --check passed for the font preparation script; executable assertions passed for rounded chart bounds, zero ticks, finite scale and preserving INN/OGRN digits. git diff --check passed. Frontend typecheck is blocked by missing tsc; Docker is blocked by socket permission. Browser documentation access was declined by the origin approval gate. No claim of build/E2E or screenshot verification.
+
+## Font build regression fix
+
+The official CDN returned ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR during Docker build.
+Normal dev/build preparation now only checks local font files and never fetches.
+Missing Styrene weights fall back to bundled Onest. Explicit download remains
+available through npm run download:fonts; TLS verification stays enabled.
+Five node:test regression cases pass: offline build, cached files, TLS rejection,
+invalid download rejection and successful explicit download. The actual prebuild
+hook passes without network access. Full Docker build remains unverified here.
+This supersedes the earlier automatic-download description.
