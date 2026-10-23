@@ -546,3 +546,17 @@ input[type="range"]::-moz-range-thumb:hover,input[type="range"]:active::-moz-ran
   .demo { grid-template-columns:1fr; }
   .demo em { grid-column:1; grid-row:auto; overflow-wrap:anywhere; }
 }
+
+/* Amounts and step actions share the calculator's monetary typography. */
+.money-value,.amount-l,.amount-xl,.text-field .input.num,.summary-values dd.money-value,.summary-payment dd.money-value { font-family:var(--ui); font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.025em; }
+.summary-payment dd.money-value { font-size:24px; }
+.text-field .input.num { font-size:20px; }
+.form-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap; }
+.form-actions .btn.ghost.small { min-height:40px; height:40px; padding:8px 14px; }
+.step-button:disabled:not([aria-current="step"]) { opacity:.5; }
+.bar-track > span { border-radius:9px 9px 0 0; }
+.chart-scroll { overscroll-behavior-x:contain; touch-action:pan-x pan-y; }
+.financing-main .turnover { max-width:560px; }
+
+
+.app-row > .num,.kv dd.num { font-family:var(--ui); font-weight:700; font-variant-numeric:tabular-nums; }

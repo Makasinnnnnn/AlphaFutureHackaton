@@ -85,3 +85,14 @@ This supersedes the earlier automatic-download description.
 - Steps use one horizontal row for number and title. Earlier steps are keyboard-accessible buttons; future steps remain disabled. Returning does not clear entered state, and edits reset submission consent.
 - Browser icon assets include ICO, 32 px PNG, SVG and Apple touch PNG using the same original Alfa Laboratory geometry (white mark on red). New asset names invalidate the previous SVG URL.
 - Verified TS/TSX syntax transpilation for every frontend source file using the available TypeScript compiler. This is not a full semantic typecheck or production build. Raster icon inspected visually; PNG/ICO dimensions checked. Docker/browser review of this build is still pending.
+
+## Selection, navigation and amount typography refinement
+
+- Removed the "Собираем условия по шагам" summary caption.
+- Purpose and product selections toggle off on a second click. Selecting a product stays on the task step; Continue activates only after task and product selection.
+- Grey small "← Назад" actions sit beside the main action on conditions, business and review steps.
+- Header navigation permits forward steps when their prerequisites are valid. Moving from edited task/conditions into business/review saves the current draft first, preventing submission of stale terms. Submission consent resets during navigation.
+- Overdraft uses the shared labelled amount input and a matching read-only fixed-term field.
+- Prominent amounts use the calculator typeface with bold tabular numerals, including the summary payment and amount, editable money fields and final review.
+- Turnover bars have rounded tops and square bottoms. Month columns are wider and the business chart viewport is capped so the returned six months remain scrollable on desktop. Uploaded statement figures use the same chart.
+- Two component-handler regressions pass: toggle/manual continuation/back navigation; invalid amount blocking and persisting changed terms before forward review. These exercise the real page handlers with mocked React/API; they are not browser E2E. Full frontend syntax transpilation passes; production build remains unverified in this environment.

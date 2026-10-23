@@ -12,7 +12,8 @@
     "typecheck": "tsc -b",
     "preview": "vite preview",
     "download:fonts": "node scripts/prepare-fonts.mjs --download",
-    "test:fonts": "node --test scripts/prepare-fonts.test.mjs"
+    "test:fonts": "node --test scripts/prepare-fonts.test.mjs",
+    "test:wizard": "node --test scripts/new-application.test.cjs"
   },
   "dependencies": {
     "@fontsource/onest": "5.3.1",

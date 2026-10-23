@@ -29,36 +29,45 @@ export default function NewApplication() {
   const [idemKey] = useState(uid);
   const act = useAction();
 
-  const pickPurpose = (code: string) =>
-    act.run(async () => {
-      setPurpose(code);
-      const r = await api.recommend({ purpose: code });
-      setRec(r);
-      setProduct(null);
-    });
-  const describe = () =>
-    act.run(async () => {
-      const r = await api.recommend({ text });
-      setRec(r);
-      setPurpose(r.purpose);
-      setProduct(null);
-    });
+  const pickPurpose = (code: string) => {
+    setConsent(false);
+    setProduct(null);
+    setRec(null);
+    setText("");
+    if (purpose === code) { setPurpose(null); return; }
+    setPurpose(code);
+    return act.run(async () => setRec(await api.recommend({ purpose: code })));
+  };
+  const describe = () => act.run(async () => {
+    setProduct(null);
+    setRec(null);
+    setConsent(false);
+    const r = await api.recommend({ text });
+    setRec(r);
+    setPurpose(r.purpose);
+  });
 
   const choose = (p: Product) => {
+    setConsent(false);
+    if (product?.code === p.code) { setProduct(null); return; }
     setProduct(p);
     setAmount((a) => Math.min(Math.max(a, p.min_amount), p.max_amount));
     setTerm((t) => Math.min(Math.max(t, p.min_term_months), p.max_term_months));
-    setStep(1);
   };
+
+  const taskReady = !!rec && !!product && !!(purpose || text.trim());
+  const conditionsReady = taskReady && !!product && Number.isFinite(amount) && amount >= product.min_amount && amount <= product.max_amount
+    && Number.isInteger(term) && term >= product.min_term_months && term <= product.max_term_months;
+  const canVisit = (target: number) => target === 0 || (target === 1 ? taskReady : conditionsReady && (target === 2 || !!draft));
 
   const payment = useMemo(() => {
     if (!product) return 0;
     return product.code === "OVERDRAFT" ? (amount * product.base_rate) / 100 / 12 : annuity(amount, product.base_rate, term);
   }, [product, amount, term]);
 
-  const saveDraft = () =>
+  const saveDraft = (nextStep = 2) =>
     act.run(async () => {
-      if (!product) return;
+      if (!product || !conditionsReady) return;
       const body = {
         product_code: product.code,
         purpose,
@@ -75,8 +84,16 @@ export default function NewApplication() {
       };
       const a = draft ? await api.update(draft.id, { ...body, version: draft.version }) : await api.create(body, idemKey);
       setDraft(a);
-      setStep(2);
+      setConsent(false);
+      setStep(nextStep);
     });
+
+  const navigateStep = (target: number) => {
+    if (act.busy || !canVisit(target) || target === step) return;
+    setConsent(false);
+    if (target >= 2 && step <= 1) return saveDraft(target);
+    setStep(target);
+  };
 
   const submit = () =>
     act.run(async () => {
@@ -96,7 +113,7 @@ export default function NewApplication() {
       <ol className="steps">
         {STEPS.map((s, i) => (
           <li key={s} className={i === step ? "on" : i < step ? "past" : ""}>
-            <button type="button" className="step-button" aria-current={i === step ? "step" : undefined} disabled={i >= step || act.busy} onClick={() => { setConsent(false); setStep(i); }}>
+            <button type="button" className="step-button" aria-current={i === step ? "step" : undefined} disabled={i === step || !canVisit(i) || act.busy} onClick={() => navigateStep(i)}>
               <span className="n" aria-hidden="true">{i + 1}</span><span>{s}</span>
             </button>
           </li>
@@ -118,7 +135,7 @@ export default function NewApplication() {
             ))}
           </div>
           <div className="describe-row">
-            <TextField id="describe" label="Или опишите задачу своими словами" placeholder="Например: закрыть кассовый разрыв" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && text.trim() && !act.busy && describe()} />
+            <TextField id="describe" label="Или опишите задачу своими словами" placeholder="Например: закрыть кассовый разрыв" value={text} onChange={(e) => { setText(e.target.value); setRec(null); setProduct(null); setPurpose(null); setConsent(false); }} onKeyDown={(e) => e.key === "Enter" && text.trim() && !act.busy && describe()} />
             <button className="btn ghost" onClick={describe} disabled={!text.trim() || act.busy}>Подобрать</button>
           </div>
           <ErrorBox error={act.error} />
@@ -130,7 +147,7 @@ export default function NewApplication() {
                 {rec.note && <p className="hint" style={{ marginTop: 4 }}>{rec.note}</p>}
               </div>
               {rec.recommendations.map((r) => (
-                <button key={r.product.code} className="choice product-choice" onClick={() => choose(r.product)} aria-pressed={product?.code === r.product.code}>
+                <button key={r.product.code} className="choice product-choice" disabled={act.busy} onClick={() => choose(r.product)} aria-pressed={product?.code === r.product.code}>
                   <div className="product-option">
                     <div>
                       {r.rank === 1 && rec.purpose && <div className="rank">Лучше всего подходит</div>}
@@ -150,6 +167,9 @@ export default function NewApplication() {
               ))}
             </div>
           )}
+          <div className="form-actions">
+            <button className="btn primary" disabled={!taskReady || act.busy} onClick={() => navigateStep(1)}>Продолжить</button>
+          </div>
         </section>
       )}
 
@@ -157,7 +177,7 @@ export default function NewApplication() {
         <section className="panel stack gap-24">
           <div className="row" style={{ justifyContent: "space-between" }}>
             <h2>{product.name}</h2>
-            <button className="btn text" onClick={() => setStep(0)}>Сменить продукт</button>
+            <button className="btn text" onClick={() => navigateStep(0)}>Сменить продукт</button>
           </div>
           <div className="field">
             <TextField id="amount-value" label={product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма кредита"} suffix="₽" className="num" inputMode="numeric" value={amount.toLocaleString("ru-RU")} onChange={(e) => { const digits = e.target.value.replace(/[^0-9]/g, ""); if (digits.length <= 12) setAmount(Number(digits)); }} onBlur={() => setAmount(Math.min(product.max_amount, Math.max(product.min_amount, amount)))} />
@@ -171,7 +191,7 @@ export default function NewApplication() {
               <span className="hint">От {product.min_term_months} до {product.max_term_months} месяцев</span>
             </div>
           ) : (
-            <p className="hint">Лимит устанавливается на {months(product.max_term_months)} и продлевается.</p>
+            <TextField id="fixed-term" label="Срок действия лимита" value={months(product.max_term_months)} readOnly />
           )}
 
           {product.requires_collateral && (
@@ -198,8 +218,9 @@ export default function NewApplication() {
             <p className="hint" style={{ flexBasis: "100%" }}>Это предварительный расчёт. Точные условия банк предложит после проверки.</p>
           </div>
           <ErrorBox error={act.error} />
-          <div className="row" style={{ justifyContent: "flex-end" }}>
-            <button className="btn primary" onClick={saveDraft} disabled={act.busy || amount < product.min_amount || amount > product.max_amount}>{act.busy ? "Сохраняем…" : "Сохранить и продолжить"}</button>
+          <div className="form-actions">
+            <button className="btn ghost small" disabled={act.busy} onClick={() => navigateStep(0)}>← Назад</button>
+            <button className="btn primary" onClick={() => saveDraft()} disabled={act.busy || !conditionsReady}>{act.busy ? "Сохраняем…" : "Сохранить и продолжить"}</button>
           </div>
         </section>
       )}
@@ -207,11 +228,11 @@ export default function NewApplication() {
       {step === 2 && draft && (
         <section className="panel stack gap-24">
           <h2>Данные о бизнесе</h2>
-          {fin.data ? (
+          {(draft.financials ?? fin.data) ? (
             <>
-              <div className="callout good">Компания обслуживается в банке — обороты по счёту уже в заявке. Вводить выручку не нужно.</div>
-              <TurnoverBars fin={fin.data} />
-              <p className="small muted">В среднем {money(fin.data.avg_monthly_inflow)} в месяц за {months(fin.data.months_count)}.</p>
+              <div className="callout good">{(draft.financials ?? fin.data)?.source === "STATEMENT_UPLOAD" ? "Обороты рассчитаны по загруженной выписке." : "Компания обслуживается в банке — обороты по счёту уже в заявке. Вводить выручку не нужно."}</div>
+              <TurnoverBars fin={(draft.financials ?? fin.data)!} />
+              <p className="small muted">В среднем <strong className="money-value">{money((draft.financials ?? fin.data)!.avg_monthly_inflow)}</strong> в месяц за {months((draft.financials ?? fin.data)!.months_count)}.</p>
             </>
           ) : (
             <div className="callout info">
@@ -223,9 +244,9 @@ export default function NewApplication() {
             <DocumentsBlock app={draft} onChange={setDraft} needStatement={!fin.data} />
           )}
           <ErrorBox error={act.error} />
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <button className="btn text" onClick={() => setStep(1)}>Назад</button>
-            <button className="btn primary" onClick={() => setStep(3)}>Продолжить</button>
+          <div className="form-actions">
+            <button className="btn ghost small" disabled={act.busy} onClick={() => navigateStep(1)}>← Назад</button>
+            <button className="btn primary" disabled={act.busy || !canVisit(3)} onClick={() => navigateStep(3)}>Продолжить</button>
           </div>
         </section>
       )}
@@ -235,9 +256,9 @@ export default function NewApplication() {
           <h2>Проверьте и отправьте</h2>
           <dl className="kv">
             <div><dt>Продукт</dt><dd>{draft.product.name}</dd></div>
-            <div><dt>Сумма</dt><dd className="num">{money(draft.amount)}</dd></div>
+            <div><dt>Сумма</dt><dd className="money-value">{money(draft.amount)}</dd></div>
             <div><dt>Срок</dt><dd>{months(draft.term_months)}</dd></div>
-            <div><dt>Платёж</dt><dd className="num">≈ {money(draft.estimated_monthly_payment)}</dd></div>
+            <div><dt>Платёж</dt><dd className="money-value">≈ {money(draft.estimated_monthly_payment)}</dd></div>
             <div><dt>Обороты</dt><dd>{draft.financials?.months_count ? `${months(draft.financials.months_count)}, в среднем ${money(draft.financials.avg_monthly_inflow)}` : "Попросим выписку на проверке"}</dd></div>
             <div><dt>Документы</dt><dd>{draft.documents.length ? draft.documents.map((d) => d.filename).join(", ") : "Нет"}</dd></div>
           </dl>
@@ -247,8 +268,8 @@ export default function NewApplication() {
             <span>Даю согласие на обработку данных компании и запрос кредитной истории в бюро кредитных историй</span>
           </label>
           <ErrorBox error={act.error} />
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <button className="btn text" onClick={() => setStep(2)}>Назад</button>
+          <div className="form-actions">
+            <button className="btn ghost small" disabled={act.busy} onClick={() => navigateStep(2)}>← Назад</button>
             <button className="btn primary" onClick={submit} disabled={!consent || act.busy}>{act.busy ? "Отправляем…" : "Отправить заявку"}</button>
           </div>
         </section>
@@ -259,7 +280,7 @@ export default function NewApplication() {
         product={product} amount={amount} term={term} payment={payment}
         financials={draft?.financials ?? fin.data} documents={draft?.documents.length ?? 0}
         businessReached={!!draft} step={step} busy={act.busy}
-        onEdit={(target) => { setConsent(false); setStep(target); }}
+        onEdit={navigateStep}
       />
       </div>
     </div>

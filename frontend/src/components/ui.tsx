@@ -146,7 +146,7 @@ export function TurnoverBars({ fin }: { fin: Financials }) {
     return () => observer.disconnect();
   }, [fin.months]);
   const years = [...new Set(entries.map((m) => m.month.slice(0, 4)))].join(" – ");
-  const move = (direction: number) => viewport.current?.scrollBy({ left: direction * 220, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  const move = (direction: number) => viewport.current?.scrollBy({ left: direction * 232, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   return (
     <div className="turnover">
       <div className="chart-top"><span className="hint">Поступления, ₽</span><div className="chart-controls">
@@ -156,7 +156,7 @@ export function TurnoverBars({ fin }: { fin: Financials }) {
       <div className="chart-plot">
       <div className="chart-scale" aria-hidden="true">{ticks.map((value) => <span key={value} style={{ top: `${(1 - value / max) * 100}%` }}>{value === 0 ? "0" : compactMoney(value)}</span>)}</div>
       <div className="chart-scroll" ref={viewport} tabIndex={0} aria-label="Обороты по месяцам. Прокрутите для просмотра периода" onScroll={(e) => setPosition(e.currentTarget.scrollLeft)}>
-        <div className="bars" style={{ minWidth: entries.length * 92 }}>
+        <div className="bars" style={{ width: entries.length * 116, minWidth: "100%" }}>
           <div className="chart-grid" aria-hidden="true">{ticks.map((value) => <i key={value} style={{ top: `${(1 - value / max) * 100}%` }} />)}</div>
           {entries.map((m) => <div className="bar" key={m.month}>
             <div className="bar-track" aria-label={`${monthLabel(m.month)} ${m.month.slice(0, 4)}: ${money(m.inflow)}`}><span style={{ height: `${Math.max(m.inflow / max * 100, 0)}%` }}><span className="bar-value">{compactMoney(m.inflow)}</span></span></div>
