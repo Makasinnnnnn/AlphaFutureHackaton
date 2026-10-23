@@ -106,3 +106,11 @@ This supersedes the earlier automatic-download description.
 - The details header includes Create based on (/new?copy=ID). It prefills purpose, product, amount, term and collateral, but creates a separate draft. Documents, decisions, agreements and consent are not copied. The form explicitly says to attach documents again.
 - Initialization uses the authorized original application and current product catalog, without requiring the recommendation service. Original selection is not labelled as the best recommendation.
 - Seven mocked-component regression cases pass, covering the existing wizard, edit/version handling, copy isolation, non-draft edit rejection, 8/8/1 pagination and a single create action. Full frontend syntax transpilation passed; full production build/browser review remains unverified here.
+
+## Notification center
+
+- Separate client and analyst notification pages, reachable from the bell popover.
+- Popover previews the latest five entries; rows include unread indicator, title, body, date and application navigation. Short inset grey rules separate rows.
+- Three-dot action menus delete individual notifications. An item is marked read on opening, instead of marking every item read when the bell opens. Read-all remains an explicit page action.
+- Added authenticated POST /api/notifications/{id}/read and DELETE /api/notifications/{id}. Both select by notification ID and current user ID and return 404 for unavailable/foreign items. No schema migration is needed.
+- Two frontend handler checks pass for client/analyst destinations and menu deletion. Three isolated backend unit checks pass for owner actions, cross-user rejection and missing IDs. The backend checks execute route functions against a fake session and do not use PostgreSQL. Full integration/browser validation remains pending.

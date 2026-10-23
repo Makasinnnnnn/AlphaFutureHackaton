@@ -1,10 +1,10 @@
+import { NotificationList, useNotifications } from "./Notifications";
 import { BrandMark } from "./BrandMark";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { api, type ApiError, type Financials, type TimelineItem } from "../lib/api";
+import { type ApiError, type Financials, type TimelineItem } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { compactMoney, dateTime, monthLabel, money, STATUS_TONE, turnoverScale } from "../lib/format";
-import { useResource } from "../lib/hooks";
 
 export function StatusChip({ code, title }: { code: string; title: string }) {
   return <span className={`chip ${STATUS_TONE[code] ?? "neutral"}`}>{title}</span>;
@@ -28,7 +28,7 @@ export function Loading() {
 function Bell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data, reload } = useResource(api.notifications, [], () => 5000);
+  const { data, error } = useNotifications();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -40,9 +40,9 @@ function Bell() {
   const toggle = async () => {
     const next = !open;
     setOpen(next);
-    if (next && data?.unread) { await api.readAll(); setTimeout(reload, 1500); }
+
   };
-  const base = user?.role === "ANALYST" ? "/analyst/applications" : "/applications";
+  const notificationsPath = user?.role === "ANALYST" ? "/analyst/notifications" : "/notifications";
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
@@ -52,14 +52,9 @@ function Bell() {
       </button>
       {open && (
         <div className="popover" role="dialog" aria-label="Уведомления">
-          {!data?.items.length && <p className="muted small" style={{ padding: 12 }}>Здесь появятся сообщения о движении ваших заявок.</p>}
-          {data?.items.map((n) => (
-            <Link key={n.id} to={n.application_id ? `${base}/${n.application_id}` : "#"} className={`note ${n.is_read ? "" : "unread"}`} onClick={() => setOpen(false)}>
-              <b>{n.title}</b>
-              <span>{n.body}</span>
-              <div className="muted small">{dateTime(n.created_at)}</div>
-            </Link>
-          ))}
+          <div className="notifications-popover-head"><h3>Уведомления</h3><Link to={notificationsPath} onClick={() => setOpen(false)}>Все уведомления ↗</Link></div>
+          {error && <p className="error-text" role="alert">Не удалось загрузить уведомления</p>}
+          <NotificationList items={data?.items.slice(0, 5) ?? []} onOpen={() => setOpen(false)} />
         </div>
       )}
     </div>

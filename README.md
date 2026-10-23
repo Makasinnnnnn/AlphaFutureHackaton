@@ -203,3 +203,12 @@ WEB_PORT=8081 docker compose up -d --build web
 ```
 
 Design decisions and verification limits: [DESIGN_GUIDELINES](docs/DESIGN_GUIDELINES.md).
+
+### Notification management
+
+Notifications have dedicated pages at `/notifications` (client) and
+`/analyst/notifications` (analyst). Clicking an application notification opens
+its application. The three-dot menu deletes it; Read all is an explicit action.
+Authenticated per-notification endpoints are `POST /api/notifications/{id}/read`
+and `DELETE /api/notifications/{id}`; both are scoped to the current user.
+Rebuild both API and web after updating this feature; no DB migration is required.

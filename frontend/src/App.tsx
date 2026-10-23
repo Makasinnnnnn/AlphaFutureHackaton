@@ -1,3 +1,4 @@
+import NotificationsPage from "./pages/NotificationsPage";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout, Loading } from "./components/ui";
@@ -22,6 +23,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<Guard role="CLIENT"><Dashboard /></Guard>} />
+      <Route path="/notifications" element={<Guard role="CLIENT"><NotificationsPage /></Guard>} />
+      <Route path="/analyst/notifications" element={<Guard role="ANALYST"><NotificationsPage /></Guard>} />
       <Route path="/new" element={<Guard role="CLIENT"><NewApplication /></Guard>} />
       <Route path="/applications/:id" element={<Guard role="CLIENT"><ApplicationPage /></Guard>} />
       <Route path="/analyst" element={<Guard role="ANALYST"><AnalystQueue /></Guard>} />

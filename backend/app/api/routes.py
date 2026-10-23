@@ -338,6 +338,26 @@ def read_all(user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Res
     return Response(status_code=204)
 
 
+@api.post("/notifications/{notification_id}/read", status_code=204, tags=["notifications"])
+def read_notification(notification_id: int, user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Response:
+    item = db.scalar(select(Notification).where(Notification.id == notification_id, Notification.user_id == user.id))
+    if item is None:
+        raise not_found("Уведомление не найдено.")
+    item.is_read = True
+    db.commit()
+    return Response(status_code=204)
+
+
+@api.delete("/notifications/{notification_id}", status_code=204, tags=["notifications"])
+def delete_notification(notification_id: int, user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Response:
+    item = db.scalar(select(Notification).where(Notification.id == notification_id, Notification.user_id == user.id))
+    if item is None:
+        raise not_found("Уведомление не найдено.")
+    db.delete(item)
+    db.commit()
+    return Response(status_code=204)
+
+
 @api.get("/integrations/status", tags=["health"], summary="Доступность моков внешних источников")
 def integrations_status(_: Annotated[User, Depends(get_current_user)]) -> dict:
     c = IntegrationClient()

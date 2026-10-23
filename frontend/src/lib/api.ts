@@ -272,6 +272,8 @@ export const api = {
     return request<Application>(`/api/applications/${id}/documents`, { method: "POST", body: fd });
   },
   notifications: () => request<{ unread: number; items: Notification[] }>("/api/notifications"),
+  deleteNotification: (id: number) => request<void>(`/api/notifications/${id}`, { method: "DELETE" }),
+  readNotification: (id: number) => request<void>(`/api/notifications/${id}/read`, { method: "POST" }),
   readAll: () => request<void>("/api/notifications/read-all", { method: "POST" }),
   queue: (statuses: string[], q: string) => {
     const p = new URLSearchParams();
