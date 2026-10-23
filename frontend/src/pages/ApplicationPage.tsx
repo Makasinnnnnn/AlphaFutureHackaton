@@ -192,10 +192,10 @@ function DraftPanel({ app, onChange }: { app: Application; onChange: (a: Applica
         <span>Даю согласие на обработку данных компании и запрос кредитной истории в бюро кредитных историй</span>
       </label>
       <ErrorBox error={act.error} />
-      <div className="row wrap">
+      <div className="draft-actions">
         <button className="btn primary" disabled={!consent || act.busy} onClick={() => act.run(async () => onChange(await api.submit(app.id)))}>Отправить заявку</button>
-        <Link className="btn ghost" to={`/new?edit=${app.id}`}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" /></svg>Редактировать</Link>
-        <button className="btn danger" disabled={act.busy} onClick={() => act.run(async () => onChange(await api.cancel(app.id, "Черновик удалён")))}>Удалить черновик</button>
+        <Link className="icon-action" to={`/new?edit=${app.id}`} aria-label="Редактировать черновик" title="Редактировать черновик"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5 5 5M4 20l5-1L20 8a3.5 3.5 0 0 0-5-5L4 14z" /></svg></Link>
+        <button className="icon-action danger" aria-label="Удалить черновик" title="Удалить черновик" disabled={act.busy} onClick={() => act.run(async () => onChange(await api.cancel(app.id, "Черновик удалён")))}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" /></svg></button>
       </div>
     </section>
   );

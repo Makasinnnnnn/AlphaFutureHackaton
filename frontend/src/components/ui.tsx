@@ -128,11 +128,18 @@ export function TurnoverBars({ fin }: { fin: Financials }) {
   const { max, ticks } = turnoverScale(entries.map((m) => m.inflow));
   const [position, setPosition] = useState(0);
   const [scrollLimit, setScrollLimit] = useState(0);
+  const latestShown = useRef<string | null>(null);
   useEffect(() => {
     const element = viewport.current;
     if (!element) return;
     const measure = () => {
-      setScrollLimit(Math.max(0, element.scrollWidth - element.clientWidth));
+      const limit = Math.max(0, element.scrollWidth - element.clientWidth);
+      setScrollLimit(limit);
+      const latest = entries.at(-1)?.month ?? "";
+      if (latestShown.current !== latest) {
+        element.scrollLeft = limit;
+        latestShown.current = latest;
+      }
       setPosition(element.scrollLeft);
     };
     measure();

@@ -594,3 +594,10 @@ a.notification-link:hover { background:#f1f2f4; }
 .notification-empty { padding:36px 16px; text-align:center; color:var(--muted); font-size:14px; }
 .notifications-page { max-width:820px; background:#fff; }
 @media(max-width:640px) { .popover { width:calc(100vw - 32px); right:-60px; } }
+.btn { border-radius:999px; }
+.draft-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.draft-actions > .btn.primary { flex:1; min-height:52px; padding:14px 24px; }
+.icon-action { display:inline-flex; align-items:center; justify-content:center; flex:0 0 48px; width:48px; height:48px; border:0; border-radius:50%; background:#e9eaec; color:var(--ink-2); cursor:pointer; text-decoration:none; }
+.icon-action:hover { background:#dfe2e6; color:var(--ink); }
+.icon-action.danger:hover { background:var(--red-bg); color:var(--red-ink); }
+.icon-action:disabled { opacity:.5; cursor:default; }

@@ -15,7 +15,8 @@
     "test:fonts": "node --test scripts/prepare-fonts.test.mjs",
     "test:wizard": "node --test scripts/new-application.test.cjs",
     "test:dashboard": "node --test scripts/dashboard.test.cjs",
-    "test:notifications": "node --test scripts/notifications.test.cjs"
+    "test:notifications": "node --test scripts/notifications.test.cjs",
+    "test:chart": "node --test scripts/turnover-chart.test.cjs"
   },
   "dependencies": {
     "@fontsource/onest": "5.3.1",

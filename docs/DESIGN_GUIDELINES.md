@@ -114,3 +114,10 @@ This supersedes the earlier automatic-download description.
 - Three-dot action menus delete individual notifications. An item is marked read on opening, instead of marking every item read when the bell opens. Read-all remains an explicit page action.
 - Added authenticated POST /api/notifications/{id}/read and DELETE /api/notifications/{id}. Both select by notification ID and current user ID and return 404 for unavailable/foreign items. No schema migration is needed.
 - Two frontend handler checks pass for client/analyst destinations and menu deletion. Three isolated backend unit checks pass for owner actions, cross-user rejection and missing IDs. The backend checks execute route functions against a fake session and do not use PostgreSQL. Full integration/browser validation remains pending.
+
+## Tab icon, latest turnover and draft actions
+
+- Browser tabs use new PNG/ICO asset URLs, enlarged original Alfa Laboratory geometry and a dedicated monochrome Safari pinned-tab mask. Removed SVG from the rel=icon candidates; an SVG fallback file still exists. Red square/white A raster inspected visually.
+- Turnover opens at the rightmost/newest period on mount and when a new latest month arrives. Refreshing the same period preserves manual scrolling. One mocked-DOM regression passes for all three behaviors.
+- Draft actions: large red submit button, circular icon-only edit/delete controls with accessible names and native hover tooltips. Buttons use pill rounding throughout.
+- Frontend syntax transpilation passes. Full Docker build and live browser favicon verification remain unconfirmed.
