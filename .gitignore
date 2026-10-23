@@ -9,3 +9,6 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Downloaded during frontend font preparation
+frontend/public/fonts/

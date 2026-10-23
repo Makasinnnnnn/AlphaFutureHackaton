@@ -62,6 +62,19 @@
 
 ### Frontend
 
+The Alfa-Bank mark uses the unchanged SVG path from `AlfaBankLogoMIcon`
+in Alfa Laboratory's `@alfalab/icons-logotype` package (declared MIT):
+https://github.com/alfa-laboratory/icons/blob/9ffde4b1d37abdacce63e45121a3fa9ce8d44b22/packages/logotype/src/AlfaBankLogoMIcon.tsx
+The logo remains a trademark of its respective owner; usage in this hackathon
+was explicitly authorized by the user. The filled notification bell uses BellMIcon from the same repository (packages/glyph/src/BellMIcon.tsx).
+
+Styrene UI font files are obtained at build time from the official bank CDN,
+using URLs documented by Alfa Laboratory:
+https://github.com/alfa-laboratory/core-components/blob/master/docs/6.typography.stories.mdx
+Styrene is a proprietary typeface, not covered by the icons package's MIT license.
+The user states hackathon permission to use the bank font. Font files are served
+locally in the finished app; this is not a general redistribution license.
+
 | Пакет | Версия | Лицензия |
 |---|---|---|
 | react, react-dom, scheduler | 19.3.1 / 0.28.0 | MIT |

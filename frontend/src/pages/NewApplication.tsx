@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { ErrorBox, Loading, TurnoverBars } from "../components/ui";
 import { DocumentsBlock } from "../components/Documents";
@@ -91,8 +91,8 @@ export default function NewApplication() {
       <p className="muted" style={{ margin: "6px 0 20px" }}>Черновик сохраняется после второго шага — к нему можно вернуться из списка заявок.</p>
       <ol className="steps">
         {STEPS.map((s, i) => (
-          <li key={s} className={i === step ? "on" : i < step ? "past" : ""}>
-            <span className="n">{i + 1}</span>{s}
+          <li key={s} aria-current={i === step ? "step" : undefined} className={i === step ? "on" : i < step ? "past" : ""}>
+            <span className="n">{i < step ? "✓" : i + 1}</span><span>{s}</span>
           </li>
         ))}
       </ol>
@@ -127,7 +127,7 @@ export default function NewApplication() {
                 {rec.note && <p className="hint" style={{ marginTop: 4 }}>{rec.note}</p>}
               </div>
               {rec.recommendations.map((r) => (
-                <button key={r.product.code} className="choice" onClick={() => choose(r.product)} aria-pressed={product?.code === r.product.code}>
+                <button key={r.product.code} className="choice product-choice" onClick={() => choose(r.product)} aria-pressed={product?.code === r.product.code}>
                   <div className="product-option">
                     <div>
                       {r.rank === 1 && rec.purpose && <div className="rank">Лучше всего подходит</div>}
@@ -157,17 +157,15 @@ export default function NewApplication() {
             <button className="btn text" onClick={() => setStep(0)}>Сменить продукт</button>
           </div>
           <div className="field">
-            <label htmlFor="amount">{product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма"}</label>
-            <div className="row">
-              <input id="amount" type="range" min={product.min_amount} max={product.max_amount} step={50_000} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
-              <input className="input num" style={{ width: 170 }} type="number" min={product.min_amount} max={product.max_amount} step={10_000} value={amount} onChange={(e) => setAmount(Number(e.target.value))} aria-label="Сумма в рублях" />
-            </div>
+            <label htmlFor="amount-value">{product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма"}</label>
+            <div className="amount-input"><input id="amount-value" className="input num" inputMode="numeric" value={amount.toLocaleString("ru-RU")} onChange={(e) => { const digits = e.target.value.replace(/[^0-9]/g, ""); if (digits.length <= 12) setAmount(Number(digits)); }} onBlur={() => setAmount(Math.min(product.max_amount, Math.max(product.min_amount, amount)))} aria-label="Сумма в рублях" /><span>₽</span></div>
+            <input id="amount" aria-label="Сумма кредита — ползунок" type="range" min={product.min_amount} max={product.max_amount} step={50_000} value={amount} style={{ "--range-progress": `${Math.min(100, Math.max(0, (amount - product.min_amount) / (product.max_amount - product.min_amount) * 100))}%` } as CSSProperties} onChange={(e) => setAmount(Number(e.target.value))} />
             <span className="hint">От {money(product.min_amount)} до {money(product.max_amount)}</span>
           </div>
           {product.min_term_months !== product.max_term_months ? (
             <div className="field">
               <label htmlFor="term">Срок: {months(term)}</label>
-              <input id="term" type="range" min={product.min_term_months} max={product.max_term_months} value={term} onChange={(e) => setTerm(Number(e.target.value))} />
+              <input id="term" style={{ "--range-progress": `${(term - product.min_term_months) / (product.max_term_months - product.min_term_months) * 100}%` } as CSSProperties} type="range" min={product.min_term_months} max={product.max_term_months} value={term} onChange={(e) => setTerm(Number(e.target.value))} />
               <span className="hint">От {product.min_term_months} до {product.max_term_months} месяцев</span>
             </div>
           ) : (
@@ -208,7 +206,7 @@ export default function NewApplication() {
           </div>
           <ErrorBox error={act.error} />
           <div className="row" style={{ justifyContent: "flex-end" }}>
-            <button className="btn primary" onClick={saveDraft} disabled={act.busy}>{act.busy ? "Сохраняем…" : "Сохранить и продолжить"}</button>
+            <button className="btn primary" onClick={saveDraft} disabled={act.busy || amount < product.min_amount || amount > product.max_amount}>{act.busy ? "Сохраняем…" : "Сохранить и продолжить"}</button>
           </div>
         </section>
       )}

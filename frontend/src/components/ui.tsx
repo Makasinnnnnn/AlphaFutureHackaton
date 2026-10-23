@@ -1,8 +1,9 @@
+import { BrandMark } from "./BrandMark";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { api, type ApiError, type Financials, type TimelineItem } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { dateTime, monthLabel, money, STATUS_TONE } from "../lib/format";
+import { compactMoney, dateTime, monthLabel, money, STATUS_TONE, turnoverScale } from "../lib/format";
 import { useResource } from "../lib/hooks";
 
 export function StatusChip({ code, title }: { code: string; title: string }) {
@@ -46,7 +47,7 @@ function Bell() {
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button className="bell" onClick={toggle} aria-label={`Уведомления${data?.unread ? `, новых: ${data.unread}` : ""}`} aria-expanded={open}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9.171L14.829 21l.926-.669.188-1.065a7 7 0 011.943-3.73l1.292-1.293A6.2 6.2 0 0021 9.827C21 6.297 17.688 3 14.173 3a6.2 6.2 0 00-4.416 1.822L8.464 6.114a7 7 0 01-3.73 1.943l-1.064.188-.67.926zm2.663 9.078a2.498 2.498 0 003.533 0l-3.533-3.533a2.498 2.498 0 000 3.533z" fillRule="evenodd" clipRule="evenodd" /></svg>
         {!!data?.unread && <span className="dot">{data.unread}</span>}
       </button>
       {open && (
@@ -74,9 +75,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="topbar">
         <div className="topbar-inner">
           <Link to={isAnalyst ? "/analyst" : "/"} className="brand">
-            <span className="brand-mark" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 32 32"><path d="M4 24h9l3-9 3 9h9" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </span>
+            <BrandMark />
             <span>Кредитный кабинет<small>{isAnalyst ? "рабочее место аналитика" : "для бизнеса"}</small></span>
           </Link>
           <nav className="topnav" aria-label="Разделы">
@@ -129,17 +128,44 @@ export function Route({ items, live }: { items: TimelineItem[]; live: boolean })
 }
 
 export function TurnoverBars({ fin }: { fin: Financials }) {
-  const max = Math.max(...fin.months.map((m) => m.inflow), 1);
+  const viewport = useRef<HTMLDivElement>(null);
+  const entries = [...fin.months].sort((a, b) => a.month.localeCompare(b.month));
+  const { max, ticks } = turnoverScale(entries.map((m) => m.inflow));
+  const [position, setPosition] = useState(0);
+  const [scrollLimit, setScrollLimit] = useState(0);
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element) return;
+    const measure = () => {
+      setScrollLimit(Math.max(0, element.scrollWidth - element.clientWidth));
+      setPosition(element.scrollLeft);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [fin.months]);
+  const years = [...new Set(entries.map((m) => m.month.slice(0, 4)))].join(" – ");
+  const move = (direction: number) => viewport.current?.scrollBy({ left: direction * 220, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   return (
-    <div>
-      <div className="bars" role="img" aria-label={`Поступления по месяцам, в среднем ${money(fin.avg_monthly_inflow)}`}>
-        {fin.months.map((m) => (
-          <div className="bar" key={m.month} title={`${m.month}: ${money(m.inflow)}`}>
-            <span style={{ height: `${Math.max((m.inflow / max) * 100, 4)}%` }} />
-            <small>{monthLabel(m.month)}</small>
-          </div>
-        ))}
+    <div className="turnover">
+      <div className="chart-top"><span className="hint">Поступления, ₽</span><div className="chart-controls">
+        <button type="button" onClick={() => move(-1)} disabled={position <= 1} aria-label="Предыдущие месяцы">←</button>
+        <button type="button" onClick={() => move(1)} disabled={position >= scrollLimit - 1} aria-label="Следующие месяцы">→</button>
+      </div></div>
+      <div className="chart-plot">
+      <div className="chart-scale" aria-hidden="true">{ticks.map((value) => <span key={value} style={{ top: `${(1 - value / max) * 100}%` }}>{value === 0 ? "0" : compactMoney(value)}</span>)}</div>
+      <div className="chart-scroll" ref={viewport} tabIndex={0} aria-label="Обороты по месяцам. Прокрутите для просмотра периода" onScroll={(e) => setPosition(e.currentTarget.scrollLeft)}>
+        <div className="bars" style={{ minWidth: entries.length * 92 }}>
+          <div className="chart-grid" aria-hidden="true">{ticks.map((value) => <i key={value} style={{ top: `${(1 - value / max) * 100}%` }} />)}</div>
+          {entries.map((m) => <div className="bar" key={m.month}>
+            <div className="bar-track" aria-label={`${monthLabel(m.month)} ${m.month.slice(0, 4)}: ${money(m.inflow)}`}><span style={{ height: `${Math.max(m.inflow / max * 100, 0)}%` }}><span className="bar-value">{compactMoney(m.inflow)}</span></span></div>
+            <small>{monthLabel(m.month)}<span className="chart-month-year">{m.month.slice(0, 4)}</span></small>
+          </div>)}
+        </div>
       </div>
+      </div>
+      <div className="chart-footer"><span>{years || "Нет данных"}</span><span>{entries.length} мес. · прокрутите график</span></div>
     </div>
   );
 }

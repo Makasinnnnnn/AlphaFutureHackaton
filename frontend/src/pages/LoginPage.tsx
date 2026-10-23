@@ -1,3 +1,4 @@
+import { BrandMark } from "../components/BrandMark";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ErrorBox } from "../components/ui";
@@ -27,9 +28,7 @@ export default function LoginPage() {
       <aside className="login-side">
         <div>
           <div className="row gap-8" style={{ marginBottom: 48 }}>
-            <span className="brand-mark" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 32 32"><path d="M4 24h9l3-9 3 9h9" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </span>
+            <BrandMark />
             <b>Кредитный кабинет для бизнеса</b>
           </div>
           <h1 className="display">Кредит без походов в банк и без догадок</h1>

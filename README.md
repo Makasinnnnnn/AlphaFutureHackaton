@@ -182,3 +182,20 @@ python scripts/e2e_check.py      # сквозная проверка работ�
 ## Версия для проверки
 
 Версия на момент дедлайна отмечена тегом `v1.0-submission` (commit hash указывается в форме сдачи).
+
+### UI fonts and design corrections
+
+The UI uses Styrene UI from the official URLs published by Alfa Laboratory.
+`npm run dev` and `npm run build` prepare the three WOFF2 weights automatically
+via `frontend/scripts/prepare-fonts.mjs`. First preparation requires build-time
+network access to `alfabank.gcdn.co`; subsequent builds reuse valid local files
+in `frontend/public/fonts`. The finished application loads fonts locally and
+requires no font CDN. Use is based on the hackathon permission stated by the team.
+
+To rebuild the edited UI when port 8080 is occupied:
+
+```sh
+WEB_PORT=8081 docker compose up -d --build web
+```
+
+Design decisions and verification limits: [DESIGN_GUIDELINES](docs/DESIGN_GUIDELINES.md).

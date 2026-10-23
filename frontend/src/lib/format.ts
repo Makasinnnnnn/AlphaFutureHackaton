@@ -62,3 +62,20 @@ export const STATUS_TONE: Record<string, Tone> = {
   REJECTED: "bad",
   CANCELLED: "muted",
 };
+
+// Visual grouping only; identifier values sent to the API are unchanged.
+export function registrationNumber(value: string | null | undefined): string {
+  if (!value) return "—";
+  const groups: Record<number, number[]> = { 10: [4, 3, 3], 12: [4, 4, 4], 13: [3, 3, 3, 4], 15: [3, 3, 3, 3, 3] };
+  let offset = 0;
+  return groups[value.length]?.map((n) => { const part = value.slice(offset, offset + n); offset += n; return part; }).join("\u202f") ?? value;
+}
+
+// Round axis marks to 1/2/5 × a power of ten, leaving room above the largest bar.
+export function turnoverScale(values: number[]) {
+  const peak = Math.max(1, ...values.filter(Number.isFinite));
+  const magnitude = 10 ** Math.floor(Math.log10(peak / 3));
+  const step = ([1, 2, 5, 10].find((n) => n * magnitude >= peak / 3) ?? 10) * magnitude;
+  const count = Math.ceil(peak / step);
+  return { max: count * step, ticks: Array.from({ length: count + 1 }, (_, i) => (count - i) * step) };
+}

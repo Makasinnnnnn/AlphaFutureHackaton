@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ErrorBox, Loading, StatusChip, TurnoverBars } from "../components/ui";
 import { api } from "../lib/api";
-import { age, compactMoney, date, money, months } from "../lib/format";
+import { age, compactMoney, date, money, months, registrationNumber } from "../lib/format";
 import { useResource } from "../lib/hooks";
 
 const ACTIVE = new Set(["SUBMITTED", "VALIDATION", "ENRICHMENT", "SCORING", "MANUAL_REVIEW"]);
@@ -15,13 +15,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{company.data?.name ?? "Мои заявки"}</h1>
-          <p>Все заявки на финансирование компании и их текущий этап.</p>
-        </div>
-        <Link to="/new" className="btn primary">Получить финансирование</Link>
-      </div>
+      <div className="page-head"><h1>Мои заявки</h1></div>
 
       <div className="grid-main">
         <div>
@@ -62,8 +56,8 @@ export default function Dashboard() {
             <div className="panel-title"><h3>Компания</h3><span className="muted small">из ЕГРЮЛ/ЕГРИП</span></div>
             {company.data ? (
               <dl className="kv-list">
-                <dt>ИНН</dt><dd className="num">{company.data.inn}</dd>
-                <dt>ОГРН</dt><dd className="num">{company.data.ogrn ?? "—"}</dd>
+                <dt>ИНН</dt><dd className="num">{registrationNumber(company.data.inn)}</dd>
+                <dt>ОГРН</dt><dd className="num">{registrationNumber(company.data.ogrn)}</dd>
                 <dt>Работает</dt><dd>{age(company.data.business_age_months)}</dd>
                 <dt>Вид деятельности</dt><dd>{company.data.okved} {company.data.okved_name}</dd>
                 <dt>Руководитель</dt><dd>{company.data.director}</dd>

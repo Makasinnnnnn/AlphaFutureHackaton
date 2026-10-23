@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "prepare:fonts": "node scripts/prepare-fonts.mjs",
+    "predev": "npm run prepare:fonts",
     "dev": "vite",
+    "prebuild": "npm run prepare:fonts",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview"
