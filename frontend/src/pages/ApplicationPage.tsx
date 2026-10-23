@@ -32,6 +32,7 @@ export default function ApplicationPage() {
           </div>
           <p>Заявка {app.number}{app.submitted_at ? `, отправлена ${dateTime(app.submitted_at)}` : ""}</p>
         </div>
+        <Link className="btn ghost" to={`/new?copy=${app.id}`}>Создать на основе</Link>
       </div>
 
       <div className="grid-app">
@@ -193,6 +194,7 @@ function DraftPanel({ app, onChange }: { app: Application; onChange: (a: Applica
       <ErrorBox error={act.error} />
       <div className="row wrap">
         <button className="btn primary" disabled={!consent || act.busy} onClick={() => act.run(async () => onChange(await api.submit(app.id)))}>Отправить заявку</button>
+        <Link className="btn ghost" to={`/new?edit=${app.id}`}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" /></svg>Редактировать</Link>
         <button className="btn danger" disabled={act.busy} onClick={() => act.run(async () => onChange(await api.cancel(app.id, "Черновик удалён")))}>Удалить черновик</button>
       </div>
     </section>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ErrorBox, Loading, StatusChip, TurnoverBars } from "../components/ui";
 import { api } from "../lib/api";
@@ -10,6 +11,11 @@ export default function Dashboard() {
   const apps = useResource(api.applications, [], (d) => (d?.some((a) => ACTIVE.has(a.status)) ? 3000 : null));
   const company = useResource(api.company, []);
   const fin = useResource(api.bankFinancials, []);
+
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil((apps.data?.length ?? 0) / 8));
+  const currentPage = Math.min(page, pageCount);
+  const visibleApps = apps.data?.slice((currentPage - 1) * 8, currentPage * 8);
 
   const needsAction = apps.data?.filter((a) => ["NEED_INFO", "APPROVED", "COUNTER_OFFER", "SIGNING", "DRAFT"].includes(a.status)) ?? [];
 
@@ -33,11 +39,10 @@ export default function Dashboard() {
               <div className="empty">
                 <h3>Заявок пока нет</h3>
                 <p>Расскажите, на что нужны деньги, — подберём подходящий кредит.</p>
-                <Link to="/new" className="btn primary" style={{ marginTop: 16 }}>Подобрать кредит</Link>
               </div>
             )}
             <div className="app-list">
-              {apps.data?.map((a) => (
+              {visibleApps?.map((a) => (
                 <Link key={a.id} to={`/applications/${a.id}`} className="app-row">
                   <div>
                     <div className="app-row-title">{a.product_name} на {compactMoney(a.amount)}</div>
@@ -48,7 +53,13 @@ export default function Dashboard() {
                 </Link>
               ))}
             </div>
+            {pageCount > 1 && <nav className="pagination" aria-label="Страницы заявок">
+              <button type="button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} aria-label="Предыдущая страница">←</button>
+              <span>Страница {currentPage} из {pageCount}</span>
+              <button type="button" disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)} aria-label="Следующая страница">→</button>
+            </nav>}
           </section>
+          <Link to="/new" className="create-application"><span aria-hidden="true">＋</span> Создать заявку</Link>
         </div>
 
         <aside>

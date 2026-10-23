@@ -560,3 +560,13 @@ input[type="range"]::-moz-range-thumb:hover,input[type="range"]:active::-moz-ran
 
 
 .app-row > .num,.kv dd.num { font-family:var(--ui); font-weight:700; font-variant-numeric:tabular-nums; }
+
+.financing-main .steps { display:flex; flex-wrap:wrap; gap:8px; }
+.financing-main .steps li { flex:0 0 auto; border-radius:999px; }
+.financing-main .step-button { width:auto; min-height:44px; padding:10px 16px; border-radius:999px; white-space:nowrap; font-size:13px; }
+.pagination { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:24px; font-size:13px; color:var(--muted); }
+.pagination button { border:0; width:36px; height:36px; border-radius:50%; background:#e5e7ea; cursor:pointer; }
+.pagination button:disabled { opacity:.35; cursor:default; }
+.create-application { display:flex; align-items:center; justify-content:center; gap:8px; min-height:56px; margin-top:16px; border-radius:18px; background:#edeef0; text-decoration:none; font-weight:500; }
+.create-application:hover { background:#e1e3e6; }
+.create-application > span { font-size:24px; line-height:1; }

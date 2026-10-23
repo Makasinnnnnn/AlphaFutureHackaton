@@ -96,3 +96,13 @@ This supersedes the earlier automatic-download description.
 - Prominent amounts use the calculator typeface with bold tabular numerals, including the summary payment and amount, editable money fields and final review.
 - Turnover bars have rounded tops and square bottoms. Month columns are wider and the business chart viewport is capped so the returned six months remain scrollable on desktop. Uploaded statement figures use the same chart.
 - Two component-handler regressions pass: toggle/manual continuation/back navigation; invalid amount blocking and persisting changed terms before forward review. These exercise the real page handlers with mocked React/API; they are not browser E2E. Full frontend syntax transpilation passes; production build remains unverified in this environment.
+
+## Application list, editing and reuse
+
+- Step buttons are content-sized pills with fully rounded ends; they no longer stretch across the form width.
+- One grey plus/create action sits below the applications panel, whether the list is empty or populated.
+- Applications are paginated locally in groups of eight, with previous/next controls and the current/total page count. API response remains unchanged.
+- Draft details include an edit action opening the wizard at /new?edit=ID with existing values and attachments. Saving updates the same ID with its current version; only DRAFT is accepted for editing, in addition to server authorization/state checks.
+- The details header includes Create based on (/new?copy=ID). It prefills purpose, product, amount, term and collateral, but creates a separate draft. Documents, decisions, agreements and consent are not copied. The form explicitly says to attach documents again.
+- Initialization uses the authorized original application and current product catalog, without requiring the recommendation service. Original selection is not labelled as the best recommendation.
+- Seven mocked-component regression cases pass, covering the existing wizard, edit/version handling, copy isolation, non-draft edit rejection, 8/8/1 pagination and a single create action. Full frontend syntax transpilation passed; full production build/browser review remains unverified here.

@@ -1,5 +1,5 @@
-import { useMemo, useState, type CSSProperties } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorBox, Loading, TurnoverBars } from "../components/ui";
 import { ApplicationSummary } from "../components/ApplicationSummary";
 import { TextField } from "../components/TextField";
@@ -11,11 +11,24 @@ import { useAction, useResource } from "../lib/hooks";
 const STEPS = ["Задача", "Условия", "Данные о бизнесе", "Отправка"];
 
 export default function NewApplication() {
+  const [params] = useSearchParams();
+  const edit = params.get("edit");
+  const copy = params.get("copy");
+  const sourceId = Number(edit ?? copy);
+  if ((edit !== null || copy !== null) && (!Number.isSafeInteger(sourceId) || sourceId <= 0 || (edit !== null && copy !== null))) return <ErrorBox error="Некорректная ссылка на заявку." />;
+  const mode = edit !== null ? "edit" : "copy";
+  return <ApplicationForm key={`${mode}-${sourceId}`} sourceId={sourceId || null} mode={mode} />;
+}
+
+export function ApplicationForm({ sourceId = null, mode = "copy" }: { sourceId?: number | null; mode?: "edit" | "copy" }) {
   const nav = useNavigate();
   const [step, setStep] = useState(0);
   const purposes = useResource(api.purposes, []);
   const products = useResource(api.products, []);
   const fin = useResource(api.bankFinancials, []);
+  const source = useResource(() => sourceId ? api.application(sourceId) : Promise.resolve(null), [sourceId]);
+  const [initialized, setInitialized] = useState(!sourceId);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
 
   const [purpose, setPurpose] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -28,6 +41,34 @@ export default function NewApplication() {
   const [consent, setConsent] = useState(false);
   const [idemKey] = useState(uid);
   const act = useAction();
+
+  useEffect(() => {
+    if (!sourceId || !source.data || products.loading || initialized) return;
+    const original = source.data;
+    if (mode === "edit" && original.status.code !== "DRAFT") {
+      setInitializationError("Редактировать можно только черновик. Используйте «Создать на основе» для новой заявки.");
+      return;
+    }
+    const selected = products.data?.find((p) => p.code === original.product.code) ?? original.product;
+    const alternatives = (products.data ?? []).filter((p) => p.code !== selected.code && (!original.purpose || p.purposes.includes(original.purpose)));
+    setPurpose(original.purpose);
+    setText(original.purpose_comment ?? "");
+    setRec({
+      purpose: original.purpose,
+      purpose_title: original.purpose_title,
+      engine: "rules",
+      note: null,
+      recommendations: [selected, ...alternatives].map((p, index) => ({ product: p, why: index === 0 ? "Продукт исходной заявки" : p.short_description, rank: index === 0 ? 0 : index + 2, estimated_rate_from: p.base_rate })),
+    });
+    setProduct(selected);
+    setAmount(original.amount);
+    setTerm(original.term_months);
+    setEquipment({ equipment_name: original.collateral?.equipment_name ?? "", equipment_cost: original.collateral?.equipment_cost == null ? "" : String(original.collateral.equipment_cost), supplier: original.collateral?.supplier ?? "" });
+    setDraft(mode === "edit" ? original : null);
+    setConsent(false);
+    setStep(1);
+    setInitialized(true);
+  }, [sourceId, source.data, products.loading, products.data, initialized, mode]);
 
   const pickPurpose = (code: string) => {
     setConsent(false);
@@ -55,7 +96,7 @@ export default function NewApplication() {
     setTerm((t) => Math.min(Math.max(t, p.min_term_months), p.max_term_months));
   };
 
-  const taskReady = !!rec && !!product && !!(purpose || text.trim());
+  const taskReady = !!rec && !!product && (!!(purpose || text.trim()) || initialized && !!sourceId);
   const conditionsReady = taskReady && !!product && Number.isFinite(amount) && amount >= product.min_amount && amount <= product.max_amount
     && Number.isInteger(term) && term >= product.min_term_months && term <= product.max_term_months;
   const canVisit = (target: number) => target === 0 || (target === 1 ? taskReady : conditionsReady && (target === 2 || !!draft));
@@ -102,12 +143,13 @@ export default function NewApplication() {
       nav(`/applications/${a.id}`, { replace: true });
     });
 
-  if (purposes.loading || products.loading) return <Loading />;
+  if (source.error || initializationError) return <ErrorBox error={source.error ?? initializationError} />;
+  if (purposes.loading || products.loading || !initialized) return <Loading />;
 
   return (
     <div className="financing-page">
-      <h1>Получить финансирование</h1>
-      <p className="muted" style={{ margin: "6px 0 20px" }}>Черновик сохраняется после второго шага — к нему можно вернуться из списка заявок.</p>
+      <h1>{sourceId && mode === "edit" ? "Редактировать заявку" : "Получить финансирование"}</h1>
+      <p className="muted" style={{ margin: "6px 0 20px" }}>{sourceId ? mode === "edit" ? `Черновик ${source.data?.number ?? ""}. Изменения сохранятся после шага «Условия».` : `На основе заявки ${source.data?.number ?? ""}. Проверьте условия и приложите документы заново.` : "Черновик сохраняется после второго шага — к нему можно вернуться из списка заявок."}</p>
       <div className="financing-layout">
       <div className="financing-main">
       <ol className="steps">
