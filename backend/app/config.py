@@ -28,12 +28,18 @@ class Settings(BaseSettings):
     pipeline_poll_interval_sec: float = 1.0
     pipeline_max_enrichment_attempts: int = 3
     pipeline_enrichment_retry_delay_sec: float = 3.0
+    pipeline_max_error_attempts: int = 3
+    pipeline_error_retry_delay_sec: float = 10.0
 
     # Документы
     max_upload_bytes: int = 5 * 1024 * 1024
 
     # Опциональный ИИ-ассистент (только open-weights модели через Ollama)
     llm_enabled: bool = False
+    llm_provider: str = "ollama"
+    llm_base_url: str = "http://ollama:11434/v1"
+    llm_api_key: str = ""
+    llm_model: str = "qwen2.5:1.5b"
     ollama_url: str = "http://ollama:11434"
     ollama_model: str = "qwen2.5:1.5b"
     llm_timeout_sec: float = 20.0

@@ -1,7 +1,8 @@
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic.json_schema import SkipJsonSchema
 
 
 # ---------- Общие ----------
@@ -132,13 +133,20 @@ class ApplicationCreate(BaseModel):
 
 
 class ApplicationUpdate(BaseModel):
-    product_code: str | None = None
+    product_code: str | SkipJsonSchema[None] = None
     purpose: str | None = None
     purpose_comment: str | None = Field(default=None, max_length=1000)
-    amount: float | None = Field(default=None, gt=0, le=1_000_000_000)
-    term_months: int | None = Field(default=None, ge=1, le=120)
+    amount: Annotated[float, Field(gt=0, le=1_000_000_000)] | SkipJsonSchema[None] = None
+    term_months: Annotated[int, Field(ge=1, le=120)] | SkipJsonSchema[None] = None
     collateral: CollateralIn | None = None
     version: int | None = Field(default=None, description="Для оптимистической блокировки")
+
+    @field_validator('product_code', 'amount', 'term_months', mode='before')
+    @classmethod
+    def required_values_cannot_be_null(cls, value):
+        if value is None:
+            raise ValueError('Поле можно пропустить, но нельзя передать null')
+        return value
 
 
 class SubmitIn(BaseModel):
@@ -157,6 +165,7 @@ class CancelIn(BaseModel):
 
 
 class SignIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     confirm: bool
     signer_name: str = Field(min_length=3, max_length=255)
 
@@ -271,6 +280,7 @@ class AnalystApplicationOut(ApplicationOut):
 
 
 class AnalystDecisionIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     action: Literal["APPROVE", "COUNTER_OFFER", "REJECT", "REQUEST_INFO"]
     version: int = Field(description="Версия заявки, которую видел аналитик (оптимистическая блокировка)")
     amount: float | None = Field(default=None, gt=0)

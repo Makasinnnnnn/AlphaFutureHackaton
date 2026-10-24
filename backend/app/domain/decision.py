@@ -85,6 +85,8 @@ class Decision:
     recommendation: str | None = None  # для аналитика в MANUAL_REVIEW
     reasons: list[dict] = field(default_factory=list)  # объяснение клиенту
     limits: dict = field(default_factory=dict)
+    offer_limits: dict = field(default_factory=dict)
+    requested_terms: dict = field(default_factory=dict)
     rules_fired: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -94,6 +96,8 @@ class Decision:
             "recommendation": self.recommendation,
             "reasons": self.reasons,
             "limits": self.limits,
+            "offer_limits": self.offer_limits,
+            "requested_terms": self.requested_terms,
             "rules_fired": self.rules_fired,
         }
 
@@ -255,8 +259,15 @@ def decide(
         )
 
     reasons = _client_reasons(score, limit=binding)
+    _, offer_limits = max_amount_for_term(product, inp, rate, counter.term_months)
+    requested_terms = {
+        "rate": rate,
+        "monthly_payment": round(monthly_load(product, inp.amount, rate, inp.term_months), 2),
+        "is_overdraft": product.is_overdraft,
+    }
     if auto:
-        return Decision("COUNTER_OFFER", offer=counter, reasons=reasons, limits=limits,
+        return Decision("COUNTER_OFFER", offer=counter, reasons=reasons, limits=limits, offer_limits=offer_limits,
+                        requested_terms=requested_terms,
                         rules_fired=[f"LIMIT:{binding}", "COUNTER"])
     return Decision(
         "MANUAL_REVIEW",
@@ -264,5 +275,7 @@ def decide(
         recommendation="Запрос выше лимита, балл в серой зоне — рекомендуется контрпредложение на указанных условиях.",
         reasons=reasons,
         limits=limits,
+        offer_limits=offer_limits,
+        requested_terms=requested_terms,
         rules_fired=[f"LIMIT:{binding}", "GRAY_ZONE"],
     )

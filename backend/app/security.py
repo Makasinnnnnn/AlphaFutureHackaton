@@ -43,10 +43,14 @@ def get_current_user(
     if creds is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Требуется авторизация")
     try:
-        payload = jwt.decode(creds.credentials, get_settings().jwt_secret, algorithms=["HS256"])
-    except jwt.PyJWTError:
+        payload = jwt.decode(creds.credentials, get_settings().jwt_secret, algorithms=["HS256"],
+                             options={"require": ["sub", "exp", "iat"]})
+        user_id = int(payload['sub'])
+        if not 0 < user_id <= 2**63 - 1:
+            raise ValueError('Invalid user ID')
+    except (jwt.PyJWTError, ValueError, TypeError, KeyError, OverflowError):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Сессия истекла или недействительна") from None
-    user = db.get(User, int(payload["sub"]))
+    user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь не найден")
     return user

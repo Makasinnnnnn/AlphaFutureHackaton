@@ -17,12 +17,12 @@ from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.domain.statuses import PIPELINE
+from app.domain.statuses import PIPELINE, Actor, Status
 from app.integrations.client import IntegrationClient
 from app.logging_conf import setup_logging
 from app.models import Application
 from app.services.pipeline import process_step
-from app.services.workflow import now
+from app.services.workflow import add_event, now, transition
 
 log = logging.getLogger("worker")
 _running = True
@@ -51,18 +51,32 @@ def run_once(batch: int = 10, client: IntegrationClient | None = None) -> int:
             ).first()
             if app is None:
                 break
+            app_id, failed_version, failed_status = app.id, app.version, app.status
             try:
                 process_step(db, app, client)
+                app.pipeline_error_attempts = 0
                 db.commit()
                 processed += 1
-            except Exception:
+            except Exception as exc:
                 db.rollback()
-                log.exception("pipeline step failed", extra={"ctx": {"application_id": app.id}})
-                # откладываем проблемную заявку, чтобы не крутиться на ней
+                log.exception("pipeline step failed", extra={"ctx": {"application_id": app_id}})
                 with SessionLocal() as db2:
-                    a = db2.get(Application, app.id)
-                    if a:
-                        a.next_action_at = now() + timedelta(seconds=10)
+                    a = db2.scalars(select(Application).where(Application.id == app_id).with_for_update()).first()
+                    # Another worker/client may have changed the row after rollback.
+                    if a and a.version == failed_version and a.status == failed_status:
+                        s = get_settings()
+                        a.pipeline_error_attempts += 1
+                        add_event(db2, a, "PIPELINE_ERROR", Actor.SYSTEM,
+                                  reason="Техническая ошибка обработки",
+                                  payload={"attempt": a.pipeline_error_attempts, "stage": failed_status,
+                                           "error_type": type(exc).__name__})
+                        if a.pipeline_error_attempts >= s.pipeline_max_error_attempts:
+                            a.decision = (a.decision or {}) | {"outcome": "MANUAL_REVIEW",
+                                "recommendation": "Автоматическая обработка остановлена после повторных технических ошибок. Проверьте данные и журнал обработки."}
+                            transition(db2, a, Status.MANUAL_REVIEW, Actor.SYSTEM,
+                                       reason="Повторная техническая ошибка — заявка передана специалисту")
+                        else:
+                            a.next_action_at = now() + timedelta(seconds=s.pipeline_error_retry_delay_sec)
                         db2.commit()
     return processed
 

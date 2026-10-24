@@ -1,0 +1,73 @@
+name: Verify credit cabinet
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16.6-alpine
+        env:
+          POSTGRES_USER: conveyor
+          POSTGRES_PASSWORD: conveyor
+          POSTGRES_DB: conveyor_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U conveyor -d conveyor_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://conveyor:conveyor@localhost:5432/conveyor_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'backend/requirements*.lock.txt'
+      - run: python -m pip install --require-hashes -r requirements.lock.txt -r requirements-dev.lock.txt
+      - run: python -m pytest
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: node --test scripts/*.test.cjs scripts/*.test.mjs
+      - run: npm run build
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build --wait --wait-timeout 180
+      - run: curl --fail http://localhost:8080/ && curl --fail http://localhost:8000/health/live
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --require-hashes -r backend/requirements.lock.txt
+      - run: python scripts/e2e_check.py --base http://localhost:8080
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
+      - name: Stop isolated CI stack
+        if: always()
+        run: docker compose down

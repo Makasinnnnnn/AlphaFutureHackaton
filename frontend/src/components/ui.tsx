@@ -47,7 +47,7 @@ function Bell() {
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button className="bell" onClick={toggle} aria-label={`Уведомления${data?.unread ? `, новых: ${data.unread}` : ""}`} aria-expanded={open}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9.171L14.829 21l.926-.669.188-1.065a7 7 0 011.943-3.73l1.292-1.293A6.2 6.2 0 0021 9.827C21 6.297 17.688 3 14.173 3a6.2 6.2 0 00-4.416 1.822L8.464 6.114a7 7 0 01-3.73 1.943l-1.064.188-.67.926zm2.663 9.078a2.498 2.498 0 003.533 0l-3.533-3.533a2.498 2.498 0 000 3.533z" fillRule="evenodd" clipRule="evenodd" /></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1" /></svg>
         {!!data?.unread && <span className="dot">{data.unread}</span>}
       </button>
       {open && (
@@ -111,7 +111,7 @@ export function Route({ items, live }: { items: TimelineItem[]; live: boolean })
         const tone = !isCurrent ? "" : FINAL_GOOD.has(t.status) ? "good" : FINAL_BAD.has(t.status) ? "bad" : t.status === "CANCELLED" ? "final" : "";
         return (
           <li key={`${t.status}-${i}`} className={`${state} ${tone} ${live && isCurrent ? "live" : ""}`} aria-current={isCurrent ? "step" : undefined}>
-            <span className="node" aria-hidden />
+            <span className="node" aria-hidden="true">{state === "done" && <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 3 3 7-7" /></svg>}</span>
             <div className="step-title">{t.title}</div>
             {t.at && <div className="step-meta">{dateTime(t.at)}{t.actor === "ANALYST" ? ", специалист банка" : ""}</div>}
             {t.reason && <div className="step-reason">{t.reason}</div>}

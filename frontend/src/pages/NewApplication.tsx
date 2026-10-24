@@ -177,7 +177,7 @@ export function ApplicationForm({ sourceId = null, mode = "copy" }: { sourceId?:
             ))}
           </div>
           <div className="describe-row">
-            <TextField id="describe" label="Или опишите задачу своими словами" placeholder="Например: закрыть кассовый разрыв" value={text} onChange={(e) => { setText(e.target.value); setRec(null); setProduct(null); setPurpose(null); setConsent(false); }} onKeyDown={(e) => e.key === "Enter" && text.trim() && !act.busy && describe()} />
+            <TextField id="describe" label="Или опишите задачу своими словами" placeholder="Например: закрыть кассовый разрыв" disabled={act.busy} value={text} onChange={(e) => { setText(e.target.value); setRec(null); setProduct(null); setPurpose(null); setConsent(false); }} onKeyDown={(e) => e.key === "Enter" && text.trim() && !act.busy && describe()} />
             <button className="btn ghost" onClick={describe} disabled={!text.trim() || act.busy}>Подобрать</button>
           </div>
           <ErrorBox error={act.error} />

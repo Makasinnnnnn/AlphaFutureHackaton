@@ -5,7 +5,7 @@ import hashlib
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
@@ -19,6 +19,7 @@ from app.models import Application, Document, Product, User
 from app.schemas import AnalystDecisionIn, ApplicationCreate, ApplicationUpdate
 from app.services.companies import bank_financials, build_financials
 from app.services.products import to_terms
+from app.services.request_documents import request_items
 from app.services.workflow import add_event, now, transition
 
 ALLOWED_DOC_KINDS = {"STATEMENT", "EQUIPMENT_INVOICE", "OTHER"}
@@ -81,6 +82,10 @@ def _check_version(app: Application, version: int | None) -> None:
 # ---------------- Клиент ----------------
 def create_application(db: Session, user: User, data: ApplicationCreate, idempotency_key: str | None) -> Application:
     if idempotency_key:
+        # Serialize duplicate requests before checking/inserting. The unique constraint
+        # alone converts simultaneous retries into an unhandled IntegrityError.
+        db.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(
+            f'application:{user.id}:{idempotency_key}', 0))))
         existing = db.scalars(
             select(Application).where(Application.applicant_id == user.id, Application.idempotency_key == idempotency_key)
         ).first()
@@ -121,6 +126,8 @@ def update_application(db: Session, user: User, app_id: int, data: ApplicationUp
     if Status(app.status) not in EDITABLE_BY_CLIENT:
         raise conflict("Заявку в текущем статусе изменить нельзя.")
     fields = data.model_dump(exclude_unset=True, exclude={"version"})
+    if fields.get('purpose') is not None and fields['purpose'] not in PURPOSES:
+        raise DomainError('UNKNOWN_PURPOSE', 'Неизвестная цель финансирования', 422)
     if Status(app.status) == Status.NEED_INFO:
         # после отправки нельзя менять продукт/сумму/срок — только дополнять данные
         locked = {"product_code", "amount", "term_months"} & fields.keys()
@@ -159,6 +166,18 @@ def resubmit(db: Session, user: User, app_id: int) -> Application:
     app = get_client_app(db, user, app_id, for_update=True)
     if Status(app.status) != Status.NEED_INFO:
         raise conflict("Повторно отправить можно только заявку, по которой запрошены данные.")
+    requests = [i for i in (request_items(app) or []) if i.get("code") == "ANALYST_REQUEST"]
+    if requests:
+        for item in requests:
+            baseline = item.get("document_ids_before_request")
+            if baseline is None or not any(d.id not in baseline for d in app.documents):
+                raise conflict("Приложите новый документ в ответ на запрос специалиста.")
+        app.missing_items = None
+        transition(db, app, Status.MANUAL_REVIEW, Actor.CLIENT, user.id,
+                   reason="Клиент приложил документы; специалист проверит ответ на дозапрос",
+                   payload={"fulfilled_requests": requests, "document_ids": [d.id for d in app.documents]})
+        db.commit()
+        return get_app(db, app.id)
     transition(db, app, Status.VALIDATION, Actor.CLIENT, user.id, reason="Клиент дополнил данные")
     db.commit()
     return get_app(db, app.id)
@@ -311,6 +330,8 @@ def analyst_decide(db: Session, analyst: User, app_id: int, data: AnalystDecisio
         items = [{"code": "ANALYST_REQUEST", "text": t} for t in (data.requested_items or []) if t.strip()]
         if not items:
             items = [{"code": "ANALYST_REQUEST", "text": data.comment}]
+        for item in items:
+            item["document_ids_before_request"] = [d.id for d in app.documents]
         app.missing_items = items
         app.decision = prev | {"analyst_comment": data.comment}
         transition(db, app, Status.NEED_INFO, Actor.ANALYST, analyst.id, reason=data.comment,

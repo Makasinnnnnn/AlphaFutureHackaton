@@ -24,6 +24,7 @@ from app.schemas import (
 )
 from app.services.companies import months_between
 from app.services.products import to_out
+from app.services.request_documents import request_items
 
 DECISION_STEP = "DECISION"
 
@@ -69,7 +70,12 @@ def timeline(app: Application) -> list[TimelineItem]:
             actor=e.actor_type,
             reason=e.reason if e.actor_type != "SYSTEM" or e.to_status in ("NEED_INFO", "REJECTED") else None,
         ))
-    for st in UPCOMING.get(Status(app.status), []):
+    upcoming = UPCOMING.get(Status(app.status), [])
+    if Status(app.status) == Status.NEED_INFO and any(
+        item.get("code") == "ANALYST_REQUEST" for item in (app.missing_items or [])
+    ):
+        upcoming = [Status.MANUAL_REVIEW, DECISION_STEP, Status.SIGNING, Status.ISSUED]
+    for st in upcoming:
         title = "Решение банка" if st == DECISION_STEP else CLIENT_COPY[st]["title"]
         items.append(TimelineItem(status=str(st), title=title, at=None, state="upcoming"))
     return items
@@ -78,7 +84,7 @@ def timeline(app: Application) -> list[TimelineItem]:
 def client_decision(decision: dict | None) -> dict | None:
     if not decision:
         return None
-    return {k: decision.get(k) for k in ("outcome", "offer", "reasons", "decided_by", "decided_at", "analyst_comment")}
+    return {k: decision.get(k) for k in ("outcome", "offer", "reasons", "decided_by", "decided_at", "analyst_comment", "requested_terms")}
 
 
 def company_out(app: Application) -> CompanyOut:
@@ -114,7 +120,7 @@ def application_out(app: Application) -> ApplicationOut:
         financials=FinancialsOut(**{k: v for k, v in (app.financials or {}).items() if k in FinancialsOut.model_fields})
         if app.financials
         else None,
-        missing_items=app.missing_items,
+        missing_items=request_items(app),
         analyst_comment=app.analyst_comment,
         decision=client_decision(app.decision),
         agreement=app.agreement,

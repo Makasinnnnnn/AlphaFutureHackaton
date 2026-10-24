@@ -258,7 +258,7 @@
         "total_monthly_payments": 35000
       },
       "bank": {
-        "is_client": false,
+        "is_client": true,
         "turnovers": []
       }
     },

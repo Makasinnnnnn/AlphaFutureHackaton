@@ -5,6 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
+    {"key": "notification_id", "value": ""},
     {
       "key": "baseUrl",
       "value": "http://localhost:8080"
@@ -27,6 +28,14 @@
     }
   ],
   "item": [
+    {
+      "name": "5. Уведомления",
+      "description": "После входа клиента скопируйте ID своего уведомления из GET /api/notifications в notification_id. Чужой ID должен вернуть 404.",
+      "item": [
+        {"name": "Прочитать одно уведомление", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{client_token}}"}], "url": "{{baseUrl}}/api/notifications/{{notification_id}}/read"}},
+        {"name": "Удалить одно уведомление", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{client_token}}"}], "url": "{{baseUrl}}/api/notifications/{{notification_id}}"}}
+      ]
+    },
     {
       "name": "0. Health",
       "item": [

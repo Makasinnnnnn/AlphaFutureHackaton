@@ -34,9 +34,12 @@ S = Status
 TRANSITIONS: dict[tuple[Status, Status], set[Actor]] = {
     (S.DRAFT, S.SUBMITTED): {Actor.CLIENT},
     (S.SUBMITTED, S.VALIDATION): {Actor.SYSTEM},
+    (S.SUBMITTED, S.MANUAL_REVIEW): {Actor.SYSTEM},  # техническая ошибка после ограниченных повторов
+    (S.VALIDATION, S.MANUAL_REVIEW): {Actor.SYSTEM},
     (S.VALIDATION, S.NEED_INFO): {Actor.SYSTEM},
     (S.VALIDATION, S.ENRICHMENT): {Actor.SYSTEM},
     (S.NEED_INFO, S.VALIDATION): {Actor.CLIENT},
+    (S.NEED_INFO, S.MANUAL_REVIEW): {Actor.CLIENT},  # ответ на ручной запрос проверяет аналитик
     (S.ENRICHMENT, S.SCORING): {Actor.SYSTEM},
     (S.ENRICHMENT, S.REJECTED): {Actor.SYSTEM},  # стоп-фактор из реестров (ликвидация и т.п.)
     (S.ENRICHMENT, S.MANUAL_REVIEW): {Actor.SYSTEM},  # внешний источник недоступен после ретраев

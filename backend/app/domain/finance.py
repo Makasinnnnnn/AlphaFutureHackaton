@@ -12,7 +12,7 @@ def annuity_payment(principal: float, annual_rate_pct: float, months: int) -> fl
     r = annual_rate_pct / 100 / 12
     if r == 0:
         return principal / months
-    return principal * r / (1 - (1 + r) ** -months)
+    return principal * r / -math.expm1(-months * math.log1p(r))
 
 
 def annuity_principal(payment: float, annual_rate_pct: float, months: int) -> float:
@@ -22,7 +22,7 @@ def annuity_principal(payment: float, annual_rate_pct: float, months: int) -> fl
     r = annual_rate_pct / 100 / 12
     if r == 0:
         return payment * months
-    return payment * (1 - (1 + r) ** -months) / r
+    return payment * -math.expm1(-months * math.log1p(r)) / r
 
 
 def overdraft_monthly_cost(limit: float, annual_rate_pct: float) -> float:
@@ -37,6 +37,11 @@ def round_down(value: float, step: int = 10_000) -> int:
 def summarize_turnovers(months: list[dict]) -> dict:
     """Сводка по помесячным оборотам: средний приход, оценка годовой выручки, стабильность."""
     rows = sorted(months, key=lambda m: m["month"])
+    for row in rows:
+        for field in ("inflow", "outflow"):
+            value = float(row.get(field, 0))
+            if not math.isfinite(value) or value < 0 or value > 1e15:
+                raise ValueError("Turnovers must be finite non-negative amounts within 1e15")
     inflows = [float(m["inflow"]) for m in rows]
     if not inflows:
         return {"months_count": 0}

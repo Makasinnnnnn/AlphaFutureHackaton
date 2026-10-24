@@ -81,6 +81,7 @@ def scenario_counter(base):
 def scenario_need_info(base):
     api = Api(base, "kovalev@demo.ru")
     a = api.apply("EQUIPMENT", 1_800_000, 36, "EQUIPMENT")
+    expect(a["company"]["is_bank_client"] is True, "демосегмент — действующие клиенты банка")
     expect(a["status"]["code"] == "NEED_INFO", f"ожидали NEED_INFO, получили {a['status']['code']}")
     codes = {i["code"] for i in a["missing_items"]}
     expect({"STATEMENT", "EQUIPMENT_INFO", "EQUIPMENT_INVOICE"} <= codes, f"не тот список дозапроса: {codes}")
@@ -129,6 +130,57 @@ def scenario_overdue(base):
     return f"{a['number']}: REJECTED (стоп-фактор: текущая просрочка)"
 
 
+def scenario_term_extension(base):
+    """Same principal, longer term; the lower payment must disclose the higher total cost."""
+    api = Api(base, "start@demo.ru")
+    a = api.apply("WORKING_CAPITAL", 2_500_000, 6, "PURCHASE_GOODS")
+    expect(a["status"]["code"] == "COUNTER_OFFER", "ожидали альтернативный срок")
+    offer = a["decision"]["offer"]
+    requested = a["decision"]["requested_terms"]
+    expect(offer["amount"] == 2_500_000 and offer["term_months"] == 9, "ожидали ту же сумму на 9 вместо 6 месяцев")
+    expect(requested["monthly_payment"] > offer["monthly_payment"], "платёж должен уменьшиться")
+    expect(requested["monthly_payment"] * 6 < offer["monthly_payment"] * 9, "общие выплаты должны увеличиться")
+    an = Api(base, "analyst@demo.ru")
+    full = an.ok(an.get(f"/api/analyst/applications/{a['id']}"))
+    expect(full["decision"]["limits"]["dti"] < 2_500_000, "запрос не проходит исходный DTI")
+    expect(min(full["decision"]["offer_limits"].values()) >= 2_500_000, "предложение должно проходить все лимиты")
+    expect("limits" not in a["decision"] and "offer_limits" not in a["decision"], "внутренние лимиты не показываем клиенту")
+    a = api.ok(api.post(f"/api/applications/{a['id']}/accept"))
+    expect(a["status"]["code"] == "SIGNING", "контрпредложение должно переходить к подписанию")
+    a = api.ok(api.post(f"/api/applications/{a['id']}/sign", json={"confirm": True, "signer_name": "Директор ООО Новый старт"}))
+    expect(a["status"]["code"] == "ISSUED", "главный демосценарий должен завершаться выдачей")
+    expect(a["agreement"]["amount"] == offer["amount"] and a["agreement"]["term_months"] == offer["term_months"], "договор должен сохранять принятые условия")
+    expect(a["agreement"]["total_payments"] > requested["monthly_payment"] * 6, "договор должен подтверждать увеличение общих выплат")
+    return f"{a['number']}: 2 500 000 ₽, 6 → 9 мес.; платёж {requested['monthly_payment']:,.2f} → {offer['monthly_payment']:,.2f} ₽; общая стоимость выше; ISSUED"
+
+
+def scenario_analyst_request(base):
+    """A manual request cannot be bypassed; a second request needs another new upload."""
+    api = Api(base, "sever@demo.ru")
+    a = api.apply("WORKING_CAPITAL", 1_000_000, 12, "PURCHASE_GOODS")
+    expect(a["status"]["code"] == "MANUAL_REVIEW", "заявка должна попасть специалисту")
+    an = Api(base, "analyst@demo.ru")
+    for round_number in (1, 2):
+        full = an.ok(an.get(f"/api/analyst/applications/{a['id']}"))
+        an.ok(an.post(f"/api/analyst/applications/{a['id']}/decision", json={
+            "action": "REQUEST_INFO", "version": full["version"],
+            "comment": f"Проверка ответа на ручной запрос, раунд {round_number}",
+            "requested_items": ["Приложите синтетический документ для проверки"]}))
+        expect(api.post(f"/api/applications/{a['id']}/resubmit").status_code == 409,
+               "старые документы не должны закрывать новый запрос")
+        with open(ROOT / "test-data/invoice_cnc_machine.pdf", "rb") as f:
+            api.ok(api.post(f"/api/applications/{a['id']}/documents", data={"kind": "OTHER"},
+                            files={"file": (f"response-{round_number}.pdf", f, "application/pdf")}))
+        a = api.ok(api.post(f"/api/applications/{a['id']}/resubmit"))
+        expect(a["status"]["code"] == "MANUAL_REVIEW" and a["missing_items"] is None,
+               "ответ должен вернуться специалисту, без автоодобрения")
+    full = an.ok(an.get(f"/api/analyst/applications/{a['id']}"))
+    responses = [e for e in full["events"] if e["event_type"] == "STATUS_CHANGED"
+                 and e["from_status"] == "NEED_INFO" and e["to_status"] == "MANUAL_REVIEW"]
+    expect(len(responses) == 2, "аудит должен содержать оба ответа")
+    return f"{a['number']}: два ручных дозапроса, 409 без новых документов, оба ответа → MANUAL_REVIEW"
+
+
 def scenario_liquidated(base):
     api = Api(base, "zakat@demo.ru")
     a = api.apply("WORKING_CAPITAL", 500_000, 6, "CASH_GAP")
@@ -168,21 +220,27 @@ def scenario_guards(base):
 
 
 SCENARIOS = [scenario_approved, scenario_counter, scenario_need_info, scenario_manual,
-             scenario_overdue, scenario_liquidated, scenario_bki_down, scenario_guards]
+             scenario_overdue, scenario_liquidated, scenario_bki_down, scenario_guards,
+             scenario_term_extension, scenario_analyst_request]
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://localhost:8080")
+    ap.add_argument("--scenario", action="append", choices=[s.__name__ for s in SCENARIOS],
+                    help="Run only a named scenario; repeat to select several")
     args = ap.parse_args()
+    selected = [s for s in SCENARIOS if not args.scenario or s.__name__ in args.scenario]
     failed = 0
-    for s in SCENARIOS:
+    for s in selected:
         try:
             print(f"✅ {s.__name__}: {s(args.base)}")
         except AssertionError as e:
             failed += 1
             print(f"❌ {s.__name__}: {e}")
-    print(f"\n{len(SCENARIOS) - failed}/{len(SCENARIOS)} сценариев пройдено")
+    print(f"\n{len(selected) - failed}/{len(selected)} сценариев пройдено")
     sys.exit(1 if failed else 0)
 
 

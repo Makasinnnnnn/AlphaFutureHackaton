@@ -39,6 +39,8 @@ def db_setup():
     from sqlalchemy.engine import make_url
 
     url = make_url(os.environ["DATABASE_URL"])
+    if not url.database or not url.database.endswith("_test"):
+        raise RuntimeError("Refusing to reset a database whose name does not end with _test")
     admin = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
     with admin.connect() as c:
         c.execute(text(f'DROP DATABASE IF EXISTS "{url.database}" WITH (FORCE)'))

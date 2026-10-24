@@ -85,6 +85,7 @@ export interface Reason { impact: "positive" | "negative" | "neutral"; text: str
 
 export interface Decision {
   outcome: string;
+  requested_terms?: { rate: number; monthly_payment: number; is_overdraft: boolean };
   offer: Offer | null;
   reasons: Reason[];
   decided_by?: string;
@@ -149,7 +150,7 @@ export interface Application {
   estimated_monthly_payment: number | null;
   collateral: { equipment_name?: string; equipment_cost?: number; supplier?: string } | null;
   financials: Financials | null;
-  missing_items: { code: string; text: string }[] | null;
+  missing_items: { code: string; text: string; document_ids_before_request?: number[] }[] | null;
   analyst_comment: string | null;
   decision: Decision | null;
   agreement: Agreement | null;
@@ -232,7 +233,7 @@ export async function request<T>(path: string, init: RequestInit & { json?: unkn
   } catch {
     throw new ApiError(0, "NETWORK", "Нет связи с сервером. Проверьте подключение и повторите.");
   }
-  if (res.status === 401 && token) onUnauthorized();
+  if (res.status === 401 && token && token === session.token) onUnauthorized();
   if (!res.ok) {
     let data: { error?: string; message?: string; details?: unknown } = {};
     try { data = await res.json(); } catch { /* not json */ }
