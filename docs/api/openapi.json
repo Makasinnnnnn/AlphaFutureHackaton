@@ -3626,14 +3626,7 @@
       "ApplicationUpdate": {
         "properties": {
           "product_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Product Code"
           },
           "purpose": {
@@ -3660,29 +3653,15 @@
             "title": "Purpose Comment"
           },
           "amount": {
-            "anyOf": [
-              {
-                "type": "number",
-                "maximum": 1000000000.0,
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
+            "maximum": 1000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount"
           },
           "term_months": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "maximum": 120.0,
-                "minimum": 1.0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 1.0,
             "title": "Term Months"
           },
           "collateral": {

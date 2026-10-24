@@ -19,6 +19,7 @@ from app.models import Application, Document, Product, User
 from app.schemas import AnalystDecisionIn, ApplicationCreate, ApplicationUpdate
 from app.services.companies import bank_financials, build_financials
 from app.services.products import to_terms
+from app.services.request_documents import request_items
 from app.services.workflow import add_event, now, transition
 
 ALLOWED_DOC_KINDS = {"STATEMENT", "EQUIPMENT_INVOICE", "OTHER"}
@@ -165,7 +166,7 @@ def resubmit(db: Session, user: User, app_id: int) -> Application:
     app = get_client_app(db, user, app_id, for_update=True)
     if Status(app.status) != Status.NEED_INFO:
         raise conflict("Повторно отправить можно только заявку, по которой запрошены данные.")
-    requests = [i for i in (app.missing_items or []) if i.get("code") == "ANALYST_REQUEST"]
+    requests = [i for i in (request_items(app) or []) if i.get("code") == "ANALYST_REQUEST"]
     if requests:
         for item in requests:
             baseline = item.get("document_ids_before_request")

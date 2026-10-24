@@ -110,3 +110,35 @@ def test_invalid_signed_token_returns_401_instead_of_500(api, subject):
         claims['sub'] = subject
     token = jwt.encode(claims, get_settings().jwt_secret, algorithm='HS256')
     assert api.get('/api/auth/me', headers={'Authorization': f'Bearer {token}'}).status_code == 401
+
+
+def test_legacy_manual_request_recovers_snapshot_without_accepting_old_documents(api, run_pipeline):
+    from pathlib import Path
+    from app.db import SessionLocal
+    from app.models import Application
+    headers = login(api, 'sever@demo.ru')
+    analyst = login(api, 'analyst@demo.ru')
+    app = draft(api, headers)
+    content = (Path(__file__).resolve().parents[2] / 'test-data/invoice_cnc_machine.pdf').read_bytes()
+    def upload(filename):
+        return api.post(f"/api/applications/{app['id']}/documents", headers=headers,
+                        data={'kind': 'OTHER'}, files={'file': (filename, content, 'application/pdf')})
+    old = upload('before-request.pdf').json()['documents'][0]['id']
+    api.post(f"/api/applications/{app['id']}/submit", headers=headers, json={'consent': True})
+    run_pipeline()
+    review = api.get(f"/api/analyst/applications/{app['id']}", headers=analyst).json()
+    response = api.post(f"/api/analyst/applications/{app['id']}/decision", headers=analyst, json={
+        'action': 'REQUEST_INFO', 'version': review['version'], 'comment': 'Нужен договор с заказчиком',
+    })
+    assert response.status_code == 200
+    with SessionLocal() as db:
+        record = db.get(Application, app['id'])
+        record.missing_items = [{'code': 'ANALYST_REQUEST', 'text': 'Нужен договор с заказчиком'}]
+        db.commit()
+    restored = api.get(f"/api/applications/{app['id']}", headers=headers).json()
+    assert restored['missing_items'][0]['document_ids_before_request'] == [old]
+    assert api.post(f"/api/applications/{app['id']}/resubmit", headers=headers).status_code == 409
+    assert upload('after-request.pdf').status_code == 201
+    response = api.post(f"/api/applications/{app['id']}/resubmit", headers=headers)
+    assert response.status_code == 200
+    assert response.json()['status']['code'] == 'MANUAL_REVIEW'

@@ -24,6 +24,7 @@ from app.schemas import (
 )
 from app.services.companies import months_between
 from app.services.products import to_out
+from app.services.request_documents import request_items
 
 DECISION_STEP = "DECISION"
 
@@ -119,7 +120,7 @@ def application_out(app: Application) -> ApplicationOut:
         financials=FinancialsOut(**{k: v for k, v in (app.financials or {}).items() if k in FinancialsOut.model_fields})
         if app.financials
         else None,
-        missing_items=app.missing_items,
+        missing_items=request_items(app),
         analyst_comment=app.analyst_comment,
         decision=client_decision(app.decision),
         agreement=app.agreement,
