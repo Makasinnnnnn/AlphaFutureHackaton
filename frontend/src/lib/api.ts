@@ -85,6 +85,7 @@ export interface Reason { impact: "positive" | "negative" | "neutral"; text: str
 
 export interface Decision {
   outcome: string;
+  requested_terms?: { rate: number; monthly_payment: number; is_overdraft: boolean };
   offer: Offer | null;
   reasons: Reason[];
   decided_by?: string;

@@ -81,6 +81,7 @@ def scenario_counter(base):
 def scenario_need_info(base):
     api = Api(base, "kovalev@demo.ru")
     a = api.apply("EQUIPMENT", 1_800_000, 36, "EQUIPMENT")
+    expect(a["company"]["is_bank_client"] is True, "демосегмент — действующие клиенты банка")
     expect(a["status"]["code"] == "NEED_INFO", f"ожидали NEED_INFO, получили {a['status']['code']}")
     codes = {i["code"] for i in a["missing_items"]}
     expect({"STATEMENT", "EQUIPMENT_INFO", "EQUIPMENT_INVOICE"} <= codes, f"не тот список дозапроса: {codes}")
@@ -144,7 +145,13 @@ def scenario_term_extension(base):
     expect(full["decision"]["limits"]["dti"] < 2_500_000, "запрос не проходит исходный DTI")
     expect(min(full["decision"]["offer_limits"].values()) >= 2_500_000, "предложение должно проходить все лимиты")
     expect("limits" not in a["decision"] and "offer_limits" not in a["decision"], "внутренние лимиты не показываем клиенту")
-    return f"{a['number']}: 2 500 000 ₽, 6 → 9 мес.; платёж {requested['monthly_payment']:,.2f} → {offer['monthly_payment']:,.2f} ₽; общая стоимость выше"
+    a = api.ok(api.post(f"/api/applications/{a['id']}/accept"))
+    expect(a["status"]["code"] == "SIGNING", "контрпредложение должно переходить к подписанию")
+    a = api.ok(api.post(f"/api/applications/{a['id']}/sign", json={"confirm": True, "signer_name": "Директор ООО Новый старт"}))
+    expect(a["status"]["code"] == "ISSUED", "главный демосценарий должен завершаться выдачей")
+    expect(a["agreement"]["amount"] == offer["amount"] and a["agreement"]["term_months"] == offer["term_months"], "договор должен сохранять принятые условия")
+    expect(a["agreement"]["total_payments"] > requested["monthly_payment"] * 6, "договор должен подтверждать увеличение общих выплат")
+    return f"{a['number']}: 2 500 000 ₽, 6 → 9 мес.; платёж {requested['monthly_payment']:,.2f} → {offer['monthly_payment']:,.2f} ₽; общая стоимость выше; ISSUED"
 
 
 def scenario_analyst_request(base):

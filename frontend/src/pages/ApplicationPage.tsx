@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { DocumentsBlock } from "../components/Documents";
 import { hasPendingAnalystRequest } from "../lib/documents";
+import { repaymentEstimate } from "../lib/offerComparison";
 import { ErrorBox, Loading, Money, Route, StatusChip, TurnoverBars } from "../components/ui";
 import { api, download, type Application } from "../lib/api";
 import { date, dateTime, money, months, pct } from "../lib/format";
@@ -79,6 +80,9 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
     if (!offer) return null;
     const counter = code === "COUNTER_OFFER";
     const productChanged = offer.product_code !== app.product.code;
+    const requested = app.decision?.requested_terms;
+    const originalCost = requested && repaymentEstimate(app.amount, requested.monthly_payment, app.term_months, requested.is_overdraft);
+    const offeredCost = repaymentEstimate(offer.amount, offer.monthly_payment, offer.term_months, offer.product_code === "OVERDRAFT");
     return (
       <section className="panel stack gap-16">
         <div>
@@ -93,11 +97,21 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
               <div className="small">Вы запрашивали</div>
               <div className="amount-l num">{money(app.amount)}</div>
               <div className="small">{app.product.name}, {months(app.term_months)}</div>
+              <dl className="kv">
+                <div><dt>Расчётная ставка</dt><dd>{requested ? pct(requested.rate) : "—"}</dd></div>
+                <div><dt>{requested?.is_overdraft ? "Проценты в месяц при полном лимите" : "Платёж в месяц"}</dt><dd>{money(requested?.monthly_payment)}</dd></div>
+                {originalCost && <><div><dt>Всего выплат ≈</dt><dd>{money(originalCost.total)}</dd></div><div><dt>Переплата ≈</dt><dd>{money(originalCost.interest)}</dd></div></>}
+              </dl>
             </div>
             <div className="offer accent">
               <div className="small muted">Предложение банка</div>
               <div className="amount-l num">{money(offer.amount)}</div>
               <div className="small">{productChanged ? <b>{offer.product_name}</b> : offer.product_name}, {offer.term_months !== app.term_months ? <b>{months(offer.term_months)}</b> : months(offer.term_months)}</div>
+              <dl className="kv">
+                <div><dt>Ставка</dt><dd>{pct(offer.rate)}</dd></div>
+                <div><dt>{offer.product_code === "OVERDRAFT" ? "Проценты в месяц при полном лимите" : "Платёж в месяц"}</dt><dd>{money(offer.monthly_payment)}</dd></div>
+                {offeredCost && <><div><dt>Всего выплат ≈</dt><dd>{money(offeredCost.total)}</dd></div><div><dt>Переплата ≈</dt><dd>{money(offeredCost.interest)}</dd></div></>}
+              </dl>
             </div>
           </div>
         ) : (
@@ -105,11 +119,12 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
             <Money value={offer.amount} size="xl" />
           </div>
         )}
-        <dl className="kv">
+        {counter && <p className="small muted">Исходный расчёт — оценка запрошенных условий, а не одобрение. {originalCost && offeredCost && offeredCost.total > originalCost.total ? "Общая сумма выплат увеличивается, даже если ежемесячный платёж стал меньше. " : ""}Итоги приблизительны: точные округления — в графике договора. Комиссии и страхование в демомодели отсутствуют. Это не расчёт полной стоимости кредита. {(requested?.is_overdraft || offer.product_code === "OVERDRAFT") && "Для овердрафта показаны только проценты при постоянном использовании всего лимита; возврат основного долга в этот платёж не включён."}</p>}
+        {!counter && <dl className="kv">
           <div><dt>Ставка</dt><dd>{pct(offer.rate)} годовых</dd></div>
           <div><dt>Срок</dt><dd>{months(offer.term_months)}</dd></div>
           <div><dt>{offer.product_code === "OVERDRAFT" ? "Проценты в месяц при полном лимите" : "Платёж в месяц"}</dt><dd className="num">{money(offer.monthly_payment)}</dd></div>
-        </dl>
+        </dl>}
         <Reasons app={app} />
         <ErrorBox error={act.error} />
         <div className="row wrap">

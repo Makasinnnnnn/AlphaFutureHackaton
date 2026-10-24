@@ -254,8 +254,11 @@ input[type="range"] { width: 100%; accent-color: var(--red); height: 24px; }
 .offer { border: 1.5px solid var(--line); border-radius: 14px; padding: 18px; }
 .offer.accent { border-color: var(--green); background: color-mix(in srgb, var(--green-bg) 45%, var(--surface)); }
 .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare > .offer { min-width: 0; }
+.compare .kv { margin-top: 16px; grid-template-columns: 1fr; }
+.compare .kv dd { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .compare .was { color: var(--muted); }
-.compare .was .amount-l { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted); }
+.compare .was .amount-l { color: var(--ink); }
 .reasons { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .reasons li { display: flex; gap: 10px; font-size: 14px; }
 .reasons li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; background: var(--muted); }
