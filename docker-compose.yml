@@ -63,7 +63,11 @@ services:
     depends_on:
       api: { condition: service_healthy }
     healthcheck:
-      disable: true
+      # PID 1 is the worker; credit progress is verified separately by E2E.
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
 
   web:

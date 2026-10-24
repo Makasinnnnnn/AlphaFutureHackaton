@@ -232,7 +232,7 @@ export async function request<T>(path: string, init: RequestInit & { json?: unkn
   } catch {
     throw new ApiError(0, "NETWORK", "Нет связи с сервером. Проверьте подключение и повторите.");
   }
-  if (res.status === 401 && token) onUnauthorized();
+  if (res.status === 401 && token && token === session.token) onUnauthorized();
   if (!res.ok) {
     let data: { error?: string; message?: string; details?: unknown } = {};
     try { data = await res.json(); } catch { /* not json */ }

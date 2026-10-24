@@ -77,7 +77,10 @@ def parse_statement(raw: bytes) -> dict:
         delim = dialect.delimiter
     except csv.Error:
         delim = ";"
-    rows = list(csv.reader(io.StringIO(text), delimiter=delim))
+    try:
+        rows = list(csv.reader(io.StringIO(text), delimiter=delim))
+    except csv.Error as exc:
+        raise StatementParseError('Не удалось прочитать CSV: проверьте разделители и длину полей.') from exc
     header, body = rows[0], [r for r in rows[1:] if any(c.strip() for c in r)]
     if not body:
         raise StatementParseError("В файле нет операций.")

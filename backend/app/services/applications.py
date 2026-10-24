@@ -5,7 +5,7 @@ import hashlib
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
@@ -81,6 +81,10 @@ def _check_version(app: Application, version: int | None) -> None:
 # ---------------- Клиент ----------------
 def create_application(db: Session, user: User, data: ApplicationCreate, idempotency_key: str | None) -> Application:
     if idempotency_key:
+        # Serialize duplicate requests before checking/inserting. The unique constraint
+        # alone converts simultaneous retries into an unhandled IntegrityError.
+        db.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(
+            f'application:{user.id}:{idempotency_key}', 0))))
         existing = db.scalars(
             select(Application).where(Application.applicant_id == user.id, Application.idempotency_key == idempotency_key)
         ).first()
@@ -121,6 +125,8 @@ def update_application(db: Session, user: User, app_id: int, data: ApplicationUp
     if Status(app.status) not in EDITABLE_BY_CLIENT:
         raise conflict("Заявку в текущем статусе изменить нельзя.")
     fields = data.model_dump(exclude_unset=True, exclude={"version"})
+    if fields.get('purpose') is not None and fields['purpose'] not in PURPOSES:
+        raise DomainError('UNKNOWN_PURPOSE', 'Неизвестная цель финансирования', 422)
     if Status(app.status) == Status.NEED_INFO:
         # после отправки нельзя менять продукт/сумму/срок — только дополнять данные
         locked = {"product_code", "amount", "term_months"} & fields.keys()

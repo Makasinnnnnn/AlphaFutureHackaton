@@ -140,6 +140,13 @@ class ApplicationUpdate(BaseModel):
     collateral: CollateralIn | None = None
     version: int | None = Field(default=None, description="Для оптимистической блокировки")
 
+    @field_validator('product_code', 'amount', 'term_months', mode='before')
+    @classmethod
+    def required_values_cannot_be_null(cls, value):
+        if value is None:
+            raise ValueError('Поле можно пропустить, но нельзя передать null')
+        return value
+
 
 class SubmitIn(BaseModel):
     consent: bool = Field(description="Согласие на обработку данных и запрос в БКИ")
@@ -157,6 +164,7 @@ class CancelIn(BaseModel):
 
 
 class SignIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     confirm: bool
     signer_name: str = Field(min_length=3, max_length=255)
 
@@ -271,6 +279,7 @@ class AnalystApplicationOut(ApplicationOut):
 
 
 class AnalystDecisionIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     action: Literal["APPROVE", "COUNTER_OFFER", "REJECT", "REQUEST_INFO"]
     version: int = Field(description="Версия заявки, которую видел аналитик (оптимистическая блокировка)")
     amount: float | None = Field(default=None, gt=0)

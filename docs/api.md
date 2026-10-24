@@ -70,6 +70,8 @@ curl -s -X POST $BASE/api/applications/$APP/sign -H "$AUTH" -H 'Content-Type: ap
 
 ## Действия с уведомлениями
 
+В PATCH заявки обязательные значения `amount`, `term_months`, `product_code` можно пропустить, но явно передавать null нельзя (422). Неизвестная цель также возвращает 422. Создание с одинаковым Idempotency-Key сериализовано в PostgreSQL в пределах одного пользователя, включая параллельные запросы. CORS для локального frontend разрешает GET/POST/PATCH/DELETE.
+
 Ручной дозапрос: `POST /api/applications/{id}/resubmit` требует документ, которого не было в `missing_items[].document_ids_before_request`. Без него — 409, с ним — MANUAL_REVIEW. Наличие нового файла означает ответ клиента, а не подтверждение его содержания; это проверяет аналитик.
 
 Все операции требуют JWT и доступны только владельцу уведомления.
