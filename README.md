@@ -2,7 +2,7 @@
 
 Команда: [доска задач](https://github.com/users/Makasinnnnnn/projects/4) · [общий контекст и правила](docs/team/README.md) · [стратегия](docs/team/STRATEGY.md).
 
-Исходный прототип импортирован из командного архива (commit `6ddf3c027d1103911990f16b446a62161bfd3bd2`). Скриншоты ниже относятся к исходной версии; актуальные проверки фиксируются отдельно в документации команды.
+Исходный прототип импортирован из командного архива. Его исходная история Git не переносилась; воспроизводимый импорт в этом репозитории — commit `72668fa`. Скриншоты ниже относятся к исходной версии; актуальные проверки фиксируются отдельно в документации команды.
 
 Прототип цифрового кредитного конвейера для малого и микробизнеса — решение кейса Альфа-Банка на хакатоне «Альфа-Будущее».
 
@@ -150,7 +150,7 @@ cd ../frontend && npm ci && npm run dev           # интерфейс на http
 ## Тесты
 
 ```bash
-cd backend && pytest -q          # 41 тест: доменная логика + сквозные сценарии через API на PostgreSQL
+cd backend && python -X utf8 -m pytest -q  # доменные, регрессионные и API-тесты; отдельная PostgreSQL БД *_test
 cd frontend && npm run typecheck
 python scripts/e2e_check.py      # сквозная проверка работающей системы, все 7 персон
 ```
@@ -181,11 +181,15 @@ python scripts/e2e_check.py      # сквозная проверка работ�
 
 ## Версия для проверки
 
-Версия на момент дедлайна отмечена тегом `v1.0-submission` (commit hash указывается в форме сдачи).
+Исправления по разбору 24 октября и результаты проверок: [SUBMISSION_FIXES](docs/team/SUBMISSION_FIXES.md).
+
+Подбор работает без LLM. Для локального OpenAI-совместимого сервера открытой модели задайте `LLM_ENABLED=true`, `LLM_PROVIDER=openai_compatible`, `LLM_BASE_URL` (например, `http://ollama:11434/v1`), `LLM_MODEL` и при необходимости `LLM_API_KEY`. Поддерживается `POST /chat/completions`. Сбой или некорректный ответ переключает подбор на правила; основной кредитный путь от помощника не зависит. Ollama `/api/generate` сохраняется как отдельный режим по умолчанию.
+
+Финальная версия пока не зафиксирована. После командной приёмки создать и опубликовать тег `v1.0-submission` на проверенном коммите; его hash указать в форме сдачи. До этого наличие тега не заявляется.
 
 ### UI fonts and design corrections
 
-The UI uses Styrene UI from the official URLs published by Alfa Laboratory.
+The UI bundles Onest and Unbounded. Styrene UI is optional and is not included in the repository.
 `npm run dev` and `npm run build` check local WOFF2 files without network access.
 If Styrene UI is missing, the UI uses bundled Onest and builds successfully.
 To fetch the official fonts explicitly, run `cd frontend` followed by

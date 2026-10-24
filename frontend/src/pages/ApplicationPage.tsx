@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { DocumentsBlock } from "../components/Documents";
+import { hasPendingAnalystRequest } from "../lib/documents";
 import { ErrorBox, Loading, Money, Route, StatusChip, TurnoverBars } from "../components/ui";
 import { api, download, type Application } from "../lib/api";
 import { date, dateTime, money, months, pct } from "../lib/format";
@@ -217,7 +218,7 @@ function NeedInfoPanel({ app, onChange }: { app: Application; onChange: (a: Appl
   const eqSaved = !!(app.collateral?.equipment_name && app.collateral?.equipment_cost);
   const statementOk = (app.financials?.months_count ?? 0) >= 3;
   const invoiceOk = app.documents.some((d) => d.kind === "EQUIPMENT_INVOICE");
-  const done = (!codes.has("STATEMENT") || statementOk) && (!codes.has("EQUIPMENT_INFO") || eqSaved) && (!codes.has("EQUIPMENT_INVOICE") || invoiceOk);
+  const done = (!codes.has("STATEMENT") || statementOk) && (!codes.has("EQUIPMENT_INFO") || eqSaved) && (!codes.has("EQUIPMENT_INVOICE") || invoiceOk) && !hasPendingAnalystRequest(app);
 
   return (
     <section className="panel stack gap-16">

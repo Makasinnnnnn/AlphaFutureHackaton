@@ -68,6 +68,19 @@ curl -s -X POST $BASE/api/applications/$APP/sign -H "$AUTH" -H 'Content-Type: ap
   -d '{"confirm":true,"signer_name":"Смирнова А. С."}' | jq '{status: .status.code, disbursement: .agreement.disbursement}'
 ```
 
+## Действия с уведомлениями
+
+Ручной дозапрос: `POST /api/applications/{id}/resubmit` требует документ, которого не было в `missing_items[].document_ids_before_request`. Без него — 409, с ним — MANUAL_REVIEW. Наличие нового файла означает ответ клиента, а не подтверждение его содержания; это проверяет аналитик.
+
+Все операции требуют JWT и доступны только владельцу уведомления.
+
+| Метод | Путь | Результат |
+|---|---|---|
+| POST | `/api/notifications/{id}/read` | Пометить одно уведомление прочитанным |
+| DELETE | `/api/notifications/{id}` | Удалить одно уведомление |
+
+Чужой или отсутствующий ID возвращает 404. Актуальные схемы ответов — в `docs/api/openapi.json`; примеры запросов — в Postman, раздел «5. Уведомления».
+
 ## Контракты смоделированных интеграций (сервис `mocks`)
 
 | Источник | Запрос | Ответ (сокращённо) |

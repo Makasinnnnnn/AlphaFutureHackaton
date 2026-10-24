@@ -66,14 +66,14 @@ The Alfa-Bank mark uses the unchanged SVG path from `AlfaBankLogoMIcon`
 in Alfa Laboratory's `@alfalab/icons-logotype` package (declared MIT):
 https://github.com/alfa-laboratory/icons/blob/9ffde4b1d37abdacce63e45121a3fa9ce8d44b22/packages/logotype/src/AlfaBankLogoMIcon.tsx
 The logo remains a trademark of its respective owner; usage in this hackathon
-was explicitly authorized by the user. The filled notification bell uses BellMIcon from the same repository (packages/glyph/src/BellMIcon.tsx).
+was explicitly authorized by the user. The upright notification bell and timeline checkmarks are simple project-owned SVG geometry.
 
 Styrene UI font files can be obtained explicitly before building from the official bank CDN,
 using URLs documented by Alfa Laboratory:
 https://github.com/alfa-laboratory/core-components/blob/master/docs/6.typography.stories.mdx
 Styrene is a proprietary typeface, not covered by the icons package's MIT license.
 The user states hackathon permission to use the bank font. Font files are served
-locally in the finished app; this is not a general redistribution license.
+locally if supplied by the builder; this is not a general redistribution license. Styrene files are not included. The default bundled fonts are Onest and Unbounded.
 
 | Пакет | Версия | Лицензия |
 |---|---|---|
@@ -97,4 +97,4 @@ locally in the finished app; this is not a general redistribution license.
 
 ## 5. Внешние сервисы во время работы
 
-Нет. Решение работает полностью автономно, без сетевых обращений за пределы `docker compose`.
+По умолчанию нет. Решение работает автономно, без обращений за пределы `docker compose`. Опциональный OpenAI-совместимый адаптер обращается только к явно настроенному `LLM_BASE_URL`; для автономной сдачи это локальный сервер открытой модели. Внешний платный провайдер не требуется.

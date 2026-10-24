@@ -149,7 +149,7 @@ export interface Application {
   estimated_monthly_payment: number | null;
   collateral: { equipment_name?: string; equipment_cost?: number; supplier?: string } | null;
   financials: Financials | null;
-  missing_items: { code: string; text: string }[] | null;
+  missing_items: { code: string; text: string; document_ids_before_request?: number[] }[] | null;
   analyst_comment: string | null;
   decision: Decision | null;
   agreement: Agreement | null;

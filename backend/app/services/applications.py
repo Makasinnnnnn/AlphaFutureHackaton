@@ -159,6 +159,18 @@ def resubmit(db: Session, user: User, app_id: int) -> Application:
     app = get_client_app(db, user, app_id, for_update=True)
     if Status(app.status) != Status.NEED_INFO:
         raise conflict("Повторно отправить можно только заявку, по которой запрошены данные.")
+    requests = [i for i in (app.missing_items or []) if i.get("code") == "ANALYST_REQUEST"]
+    if requests:
+        for item in requests:
+            baseline = item.get("document_ids_before_request")
+            if baseline is None or not any(d.id not in baseline for d in app.documents):
+                raise conflict("Приложите новый документ в ответ на запрос специалиста.")
+        app.missing_items = None
+        transition(db, app, Status.MANUAL_REVIEW, Actor.CLIENT, user.id,
+                   reason="Клиент приложил документы; специалист проверит ответ на дозапрос",
+                   payload={"fulfilled_requests": requests, "document_ids": [d.id for d in app.documents]})
+        db.commit()
+        return get_app(db, app.id)
     transition(db, app, Status.VALIDATION, Actor.CLIENT, user.id, reason="Клиент дополнил данные")
     db.commit()
     return get_app(db, app.id)
@@ -311,6 +323,8 @@ def analyst_decide(db: Session, analyst: User, app_id: int, data: AnalystDecisio
         items = [{"code": "ANALYST_REQUEST", "text": t} for t in (data.requested_items or []) if t.strip()]
         if not items:
             items = [{"code": "ANALYST_REQUEST", "text": data.comment}]
+        for item in items:
+            item["document_ids_before_request"] = [d.id for d in app.documents]
         app.missing_items = items
         app.decision = prev | {"analyst_comment": data.comment}
         transition(db, app, Status.NEED_INFO, Actor.ANALYST, analyst.id, reason=data.comment,

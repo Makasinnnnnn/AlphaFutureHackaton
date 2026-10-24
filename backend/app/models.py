@@ -129,6 +129,7 @@ class Application(Base):
     # Служебные поля конвейера
     next_action_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     enrichment_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    pipeline_error_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     assigned_analyst_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     idempotency_key: Mapped[str | None] = mapped_column(String(64))
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 import re
 from collections import defaultdict
 from datetime import date, datetime
@@ -37,11 +38,14 @@ def _decode(raw: bytes) -> str:
 def _num(value: str | None) -> float:
     if value is None:
         return 0.0
-    s = re.sub(r"[\s ₽руб.]", "", str(value)).replace(",", ".")
+    s = re.sub(r"\s|₽|руб\.?", "", str(value), flags=re.IGNORECASE).replace(",", ".")
     if s in ("", "-"):
         return 0.0
     try:
-        return float(s)
+        number = float(s)
+        if not math.isfinite(number) or abs(number) > 1e15:
+            raise ValueError("non-finite or out-of-range amount")
+        return number
     except ValueError as e:
         raise StatementParseError(f"Не удалось распознать сумму «{value}».") from e
 
@@ -75,6 +79,8 @@ def parse_statement(raw: bytes) -> dict:
         delim = ";"
     rows = list(csv.reader(io.StringIO(text), delimiter=delim))
     header, body = rows[0], [r for r in rows[1:] if any(c.strip() for c in r)]
+    if not body:
+        raise StatementParseError("В файле нет операций.")
 
     i_date = _find(header, DATE_KEYS)
     i_amt = _find(header, AMOUNT_KEYS)
@@ -85,18 +91,27 @@ def parse_statement(raw: bytes) -> dict:
         )
 
     agg: dict[str, dict[str, float]] = defaultdict(lambda: {"inflow": 0.0, "outflow": 0.0, "ops": 0})
-    for r in body:
+    required = [i for i in (i_date, i_amt if i_in is None else i_in, i_out) if i is not None]
+    for row_number, r in enumerate(body, start=2):
+        if len(r) <= max(required):
+            raise StatementParseError(f"В строке {row_number} не хватает колонок.")
         d = _date(r[i_date])
+        if d > date.today():
+            raise StatementParseError(f"В строке {row_number} дата операции находится в будущем.")
         key = f"{d.year:04d}-{d.month:02d}"
         if i_in is not None:
             inflow = _num(r[i_in]) if i_in < len(r) else 0.0
             outflow = abs(_num(r[i_out])) if i_out is not None and i_out < len(r) else 0.0
+            if inflow < 0:
+                raise StatementParseError(f"В строке {row_number} поступление не может быть отрицательным.")
         else:
             amt = _num(r[i_amt])
             inflow, outflow = (amt, 0.0) if amt >= 0 else (0.0, -amt)
         agg[key]["inflow"] += inflow
         agg[key]["outflow"] += outflow
         agg[key]["ops"] += 1
+        if max(agg[key]["inflow"], agg[key]["outflow"]) > 1e15:
+            raise StatementParseError("Суммарный оборот за месяц превышает допустимый диапазон.")
 
     months = [
         {"month": m, "inflow": round(v["inflow"], 2), "outflow": round(v["outflow"], 2), "operations": v["ops"]}

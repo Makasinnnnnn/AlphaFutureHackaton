@@ -57,7 +57,7 @@ def _validate(db: Session, app: Application) -> None:
     if items:
         app.missing_items = items
         transition(db, app, Status.NEED_INFO, Actor.SYSTEM,
-                   reason="Не хватает данных: " + ", ".join(i["code"] for i in items),
+                   reason=" ".join(i["text"] for i in items),
                    payload={"missing_items": items})
     else:
         app.missing_items = None

@@ -30,14 +30,29 @@ LLM_PROMPT = """Ты помогаешь предпринимателю выбр�
 def classify_llm(text: str) -> str | None:
     s = get_settings()
     options = "\n".join(f"{k}: {v['title']} — {v['hint']}" for k, v in PURPOSES.items())
-    r = httpx.post(
-        f"{s.ollama_url}/api/generate",
-        json={"model": s.ollama_model, "prompt": LLM_PROMPT.format(options=options, text=text),
-              "format": "json", "stream": False, "options": {"temperature": 0}},
-        timeout=s.llm_timeout_sec,
-    )
+    prompt = LLM_PROMPT.format(options=options, text=text)
+    if s.llm_provider == "openai_compatible":
+        headers = {"Authorization": f"Bearer {s.llm_api_key}"} if s.llm_api_key else {}
+        r = httpx.post(
+            f"{s.llm_base_url.rstrip('/')}/chat/completions",
+            headers=headers,
+            json={"model": s.llm_model, "messages": [{"role": "user", "content": prompt}],
+                  "temperature": 0, "stream": False},
+            timeout=s.llm_timeout_sec,
+        )
+    elif s.llm_provider == "ollama":
+        r = httpx.post(
+            f"{s.ollama_url}/api/generate",
+            json={"model": s.ollama_model, "prompt": prompt,
+                  "format": "json", "stream": False, "options": {"temperature": 0}},
+            timeout=s.llm_timeout_sec,
+        )
+    else:
+        raise ValueError("Unsupported LLM_PROVIDER")
     r.raise_for_status()
-    purpose = json.loads(r.json()["response"]).get("purpose")
+    body = r.json()
+    content = body["choices"][0]["message"]["content"] if s.llm_provider == "openai_compatible" else body["response"]
+    purpose = json.loads(content).get("purpose")
     return purpose if purpose in PURPOSES else None
 
 

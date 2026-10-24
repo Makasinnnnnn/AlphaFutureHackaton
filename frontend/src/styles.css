@@ -174,7 +174,8 @@ input[type="range"] { width: 100%; accent-color: var(--red); height: 24px; }
   display: grid; place-items: center;
 }
 .route li.done .node { background: var(--ink); border-color: var(--ink); }
-.route li.done .node::after { content: ""; width: 8px; height: 4px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+.route li.done .node { color: #fff; }
+.route .node svg { display: block; flex: none; }
 .route li.current .node { border-color: var(--red); background: var(--red); box-shadow: 0 0 0 5px var(--red-bg); }
 .route li.current.live .node { animation: pulse 1.6s ease-out infinite; }
 .route li.current.good .node { background: var(--green); border-color: var(--green); box-shadow: 0 0 0 5px var(--green-bg); }
