@@ -5,7 +5,10 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {"key": "notification_id", "value": ""},
+    {
+      "key": "notification_id",
+      "value": ""
+    },
     {
       "key": "baseUrl",
       "value": "http://localhost:8080"
@@ -32,8 +35,32 @@
       "name": "5. Уведомления",
       "description": "После входа клиента скопируйте ID своего уведомления из GET /api/notifications в notification_id. Чужой ID должен вернуть 404.",
       "item": [
-        {"name": "Прочитать одно уведомление", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{client_token}}"}], "url": "{{baseUrl}}/api/notifications/{{notification_id}}/read"}},
-        {"name": "Удалить одно уведомление", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{client_token}}"}], "url": "{{baseUrl}}/api/notifications/{{notification_id}}"}}
+        {
+          "name": "Прочитать одно уведомление",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/{{notification_id}}/read"
+          }
+        },
+        {
+          "name": "Удалить одно уведомление",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/{{notification_id}}"
+          }
+        }
       ]
     },
     {
@@ -963,6 +990,20 @@
                 }
               ]
             }
+          }
+        },
+        {
+          "name": "Очередь: страница с размером и общим количеством",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analyst_token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/analyst/applications/page?limit=20&offset=0&status=MANUAL_REVIEW",
+            "description": "items/total/limit/offset; limit 1–100, offset >= 0. Черновики исключены."
           }
         },
         {

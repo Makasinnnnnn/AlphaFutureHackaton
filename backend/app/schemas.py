@@ -215,6 +215,13 @@ class ApplicationListItem(BaseModel):
     submitted_at: datetime | None = None
 
 
+class AnalystQueuePageOut(BaseModel):
+    items: list[ApplicationListItem]
+    total: int
+    limit: int
+    offset: int
+
+
 class ApplicationOut(BaseModel):
     id: int
     number: str

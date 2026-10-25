@@ -41,6 +41,7 @@
 | POST | `/api/applications/{id}/sign` | CLIENT | Подписать (симуляция) → выдача (симуляция) |
 | POST | `/api/applications/{id}/cancel` | CLIENT | Отменить или отказаться |
 | GET | `/api/analyst/applications?status=&q=` | ANALYST | Очередь с фильтрами и поиском |
+| GET | `/api/analyst/applications/page?limit=20&offset=0&status=&q=` | ANALYST | Страница очереди: `items`, `total`, `limit`, `offset`; limit 1–100, offset ≥ 0. Стабильный порядок: изменение статуса, затем ID по убыванию. Черновики исключены |
 | GET | `/api/analyst/applications/{id}` | ANALYST | Полная карточка: скоринг, проверки, аудит |
 | POST | `/api/analyst/applications/{id}/decision` | ANALYST | Решение: `APPROVE`, `COUNTER_OFFER`, `REJECT`, `REQUEST_INFO` |
 | GET | `/api/analyst/stats` | ANALYST | Сводка: статусы, доля одобрений, время до решения |
@@ -48,6 +49,8 @@
 | POST | `/api/notifications/read-all` | любая | Отметить прочитанными |
 
 Поле `allowed_actions` в ответе заявки перечисляет действия, доступные в текущем статусе (`SUBMIT`, `RESUBMIT`, `ACCEPT_OFFER`, `SIGN`, `CANCEL`…). Интерфейс опирается на него, а не дублирует логику статусов.
+
+Старый endpoint очереди сохраняет список максимум из 200 записей для совместимости. Интерфейс аналитика использует `/page` и может получить более старые заявки. Сводка `/api/analyst/stats` считает отправленные заявки, без клиентских черновиков, как и сама очередь.
 
 ## Пример: сквозной сценарий через curl
 

@@ -18,6 +18,7 @@ from app.models import Application, ApplicationEvent, Company, Document, Notific
 from app.schemas import (
     AnalystApplicationOut,
     AnalystDecisionIn,
+    AnalystQueuePageOut,
     ApplicationCreate,
     ApplicationListItem,
     ApplicationOut,
@@ -259,14 +260,36 @@ def analyst_queue(
     status: Annotated[list[str] | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=100, description="Поиск по номеру, ИНН, названию")] = None,
 ) -> list[ApplicationListItem]:
+    stmt = _analyst_queue_query(status, q)
+    apps = db.scalars(stmt.order_by(Application.status_changed_at.desc(), Application.id.desc()).limit(200)).all()
+    return [list_item(a, with_score=True) for a in apps]
+
+
+def _analyst_queue_query(status, q):
     stmt = select(Application).join(Company).where(Application.status != Status.DRAFT.value)
     if status:
         stmt = stmt.where(Application.status.in_(status))
     if q:
         like = f"%{q.strip()}%"
         stmt = stmt.where(Application.number.ilike(like) | Company.inn.ilike(like) | Company.name.ilike(like))
-    apps = db.scalars(stmt.order_by(Application.status_changed_at.desc()).limit(200)).all()
-    return [list_item(a, with_score=True) for a in apps]
+    return stmt
+
+
+@api.get("/analyst/applications/page", response_model=AnalystQueuePageOut, tags=["analyst"],
+         summary="Очередь с серверной пагинацией, фильтрами и общим количеством")
+def analyst_queue_page(
+    _: AnalystDep, db: DbDep,
+    status: Annotated[list[str] | None, Query()] = None,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> AnalystQueuePageOut:
+    stmt = _analyst_queue_query(status, q)
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    apps = db.scalars(stmt.order_by(Application.status_changed_at.desc(), Application.id.desc())
+                      .offset(offset).limit(limit)).all()
+    return AnalystQueuePageOut(items=[list_item(a, with_score=True) for a in apps],
+                               total=total, limit=limit, offset=offset)
 
 
 @api.get("/analyst/applications/{app_id}", response_model=AnalystApplicationOut, tags=["analyst"],
@@ -295,7 +318,8 @@ def analyst_download(app_id: int, doc_id: int, _: AnalystDep, db: DbDep) -> Resp
 
 @api.get("/analyst/stats", response_model=StatsOut, tags=["analyst"], summary="Сводка по конвейеру")
 def analyst_stats(_: AnalystDep, db: DbDep) -> StatsOut:
-    rows = db.execute(select(Application.status, func.count()).group_by(Application.status)).all()
+    rows = db.execute(select(Application.status, func.count())
+                      .where(Application.status != Status.DRAFT.value).group_by(Application.status)).all()
     by_status = {s: n for s, n in rows}
     decided = sum(by_status.get(s, 0) for s in ("APPROVED", "COUNTER_OFFER", "SIGNING", "ISSUED", "REJECTED"))
     positive = decided - by_status.get("REJECTED", 0)

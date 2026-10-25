@@ -282,6 +282,12 @@ export const api = {
     if (q) p.set("q", q);
     return request<ListItem[]>(`/api/analyst/applications?${p}`);
   },
+  queuePage: (statuses: string[], q: string, limit: number, offset: number) => {
+    const p = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    statuses.forEach((s) => p.append("status", s));
+    if (q) p.set("q", q);
+    return request<{ items: ListItem[]; total: number; limit: number; offset: number }>(`/api/analyst/applications/page?${p}`);
+  },
   analystApplication: (id: number) => request<AnalystApplication>(`/api/analyst/applications/${id}`),
   decide: (id: number, body: unknown) =>
     request<AnalystApplication>(`/api/analyst/applications/${id}/decision`, { method: "POST", json: body }),
