@@ -610,6 +610,27 @@ a.notification-link:hover { background:#f1f2f4; }
 .icon-action:disabled { opacity:.5; cursor:default; }
 
 /* Analyst review: compact queue and navigation available while reading. */
+.table-wrap { max-width:100%; overflow-x:auto; }
+.tabs { overflow-y:hidden; }
+.app-footer { margin-top:28px; text-align:center; color:var(--muted); font-size:13px; }
+.app-footer a { display:inline-block; padding:12px; text-underline-offset:3px; }
+.check-row > * { min-width:0; overflow-wrap:anywhere; }
+@media(max-width:1100px) { .who { display:none; } }
+@media(min-width:641px) and (max-width:900px) {
+  .topnav { display:flex; position:fixed; left:12px; right:12px; bottom:max(12px,env(safe-area-inset-bottom)); z-index:25; margin:0; background:#edeef0; border-radius:20px; padding:6px; }
+  .topnav a { flex:1; text-align:center; font-size:13px; }
+  .page { padding-bottom:110px; }
+}
+@media(max-width:640px) {
+  .check-row { grid-template-columns:minmax(0,1fr); gap:8px; }
+  .app-row { grid-template-columns:minmax(0,1fr); gap:10px; }
+  .app-row > .chip { justify-self:start; }
+  .chip { max-width:100%; height:auto; min-height:26px; padding:5px 10px; white-space:normal; line-height:1.35; }
+  .chip::before { flex:none; }
+  .topnav { bottom:max(12px,env(safe-area-inset-bottom)); }
+  .page { padding-bottom:calc(110px + env(safe-area-inset-bottom)); }
+  .back-to-top { bottom:calc(96px + env(safe-area-inset-bottom)); }
+}
 .analyst-queue .page-head { margin-bottom:16px; align-items:center; }
 .analyst-queue .page-head p { margin-top:4px; }
 .analyst-queue .stats-row { gap:12px; margin-bottom:16px; }
@@ -633,7 +654,7 @@ a.notification-link:hover { background:#f1f2f4; }
 .back-to-top:hover { background:var(--ink-2); }
 @media(max-width:640px) {
   .analyst-queue .stat { padding:14px; }
-  .back-to-top { right:16px; bottom:96px; }
+  .back-to-top { right:16px; bottom:calc(96px + env(safe-area-inset-bottom)); }
   .grid-analyst .kv-list { grid-template-columns:1fr; gap:4px; }
   .grid-analyst .kv-list dd { margin-bottom:8px; }
 }
