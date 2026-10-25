@@ -610,6 +610,16 @@ a.notification-link:hover { background:#f1f2f4; }
 .icon-action:disabled { opacity:.5; cursor:default; }
 
 /* Analyst review: compact queue and navigation available while reading. */
+.btn, .filter, .chart-controls button, .pagination button { display:inline-flex; align-items:center; justify-content:center; line-height:1.3; }
+.filter { gap:6px; }
+.chip { justify-content:center; }
+.field.grow, .dropzone .grow { min-width:0; }
+.decision-fields { align-items:stretch; }
+.decision-fields .field { display:flex; flex-direction:column; }
+.decision-fields label { flex:1; }
+.dropzone { align-items:center; flex-wrap:wrap; }
+.dropzone .grow, .grid-analyst .row .grow { overflow-wrap:anywhere; }
+.dropzone .btn { flex:none; max-width:100%; white-space:normal; }
 .table-wrap { max-width:100%; overflow-x:auto; }
 .tabs { overflow-y:hidden; }
 .app-footer { margin-top:28px; text-align:center; color:var(--muted); font-size:13px; }

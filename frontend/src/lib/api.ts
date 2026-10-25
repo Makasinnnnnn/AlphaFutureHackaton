@@ -93,6 +93,7 @@ export interface Decision {
   analyst_comment?: string | null;
   recommendation?: string | null;
   limits?: Record<string, number>;
+  offer_limits?: Record<string, number>;
   rules_fired?: string[];
   system_decision?: { outcome?: string; offer?: Offer | null; recommendation?: string | null };
 }

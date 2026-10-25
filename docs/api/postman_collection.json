@@ -1007,6 +1007,20 @@
           }
         },
         {
+          "name": "Очередь: страница с размером и общим количеством",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analyst_token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/analyst/applications/page?limit=20&offset=0&status=MANUAL_REVIEW",
+            "description": "items/total/limit/offset; limit 1–100, offset >= 0. Черновики исключены."
+          }
+        },
+        {
           "name": "Карточка: скоринг, проверки, аудит",
           "request": {
             "method": "GET",

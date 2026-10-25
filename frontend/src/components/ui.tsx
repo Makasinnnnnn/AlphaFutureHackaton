@@ -6,6 +6,7 @@ import { type ApiError, type Financials, type TimelineItem } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { compactMoney, dateTime, monthLabel, money, STATUS_TONE, turnoverScale } from "../lib/format";
 import { scrollChartWithWheel } from "../lib/chartScroll";
+import { readableReason } from "../lib/labels";
 
 export function StatusChip({ code, title }: { code: string; title: string }) {
   return <span className={`chip ${STATUS_TONE[code] ?? "neutral"}`}>{title}</span>;
@@ -115,7 +116,7 @@ export function Route({ items, live }: { items: TimelineItem[]; live: boolean })
             <span className="node" aria-hidden="true">{state === "done" && <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 3 3 7-7" /></svg>}</span>
             <div className="step-title">{t.title}</div>
             {t.at && <div className="step-meta">{dateTime(t.at)}{t.actor === "ANALYST" ? ", специалист банка" : ""}</div>}
-            {t.reason && <div className="step-reason">{t.reason}</div>}
+            {t.reason && <div className="step-reason">{readableReason(t.reason)}</div>}
           </li>
         );
       })}

@@ -62,7 +62,7 @@ class DecisionInput:
 class Offer:
     product_code: str
     product_name: str
-    amount: int
+    amount: float
     term_months: int
     rate: float
     monthly_payment: float
@@ -217,7 +217,7 @@ def decide(
 
     # 4. Запрос укладывается в лимиты
     if inp.amount <= max_amt:
-        offer = Offer(product.code, product.name, int(inp.amount), inp.term_months, rate,
+        offer = Offer(product.code, product.name, round(inp.amount, 2), inp.term_months, rate,
                       monthly_load(product, inp.amount, rate, inp.term_months))
         if auto:
             return Decision("APPROVED", offer=offer, reasons=_client_reasons(score), limits=limits,
@@ -237,7 +237,7 @@ def decide(
         for term in range(inp.term_months + 1, product.max_term + 1):
             m, _ = max_amount_for_term(product, inp, rate, term)
             if inp.amount <= m:
-                counter = Offer(product.code, product.name, int(inp.amount), term, rate,
+                counter = Offer(product.code, product.name, round(inp.amount, 2), term, rate,
                                 annuity_payment(inp.amount, rate, term))
                 break
     if counter is None:

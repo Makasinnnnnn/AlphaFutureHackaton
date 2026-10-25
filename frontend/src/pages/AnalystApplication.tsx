@@ -5,6 +5,7 @@ import { api, download, type AnalystApplication as AA } from "../lib/api";
 import { age, dateTime, money, months, pct } from "../lib/format";
 import { useAction, useResource } from "../lib/hooks";
 import { BackToTop } from "../components/BackToTop";
+import { ACTOR_LABELS, DOCUMENT_LABELS, EVENT_LABELS, STATUS_LABELS, offerDiffers } from "../lib/labels";
 
 const LIVE = new Set(["SUBMITTED", "VALIDATION", "ENRICHMENT", "SCORING"]);
 const SOURCE_NAME: Record<string, string> = { EGRUL: "ЕГРЮЛ/ЕГРИП", FNS: "ФНС, «Прозрачный бизнес»", BKI: "Бюро кредитных историй" };
@@ -77,7 +78,7 @@ export default function AnalystApplication() {
               <div className="panel-title"><h3>Документы клиента</h3></div>
               {app.documents.map((d) => (
                 <div key={d.id} className="row" style={{ padding: "6px 0" }}>
-                  <span className="grow">{d.filename} <span className="muted small">({d.kind})</span></span>
+                  <span className="grow">{d.filename} <span className="muted small">({DOCUMENT_LABELS[d.kind] ?? d.kind})</span></span>
                   <button className="btn text small" onClick={() => download(`/api/analyst/applications/${app.id}/documents/${d.id}`, d.filename)}>Скачать</button>
                 </div>
               ))}
@@ -87,7 +88,7 @@ export default function AnalystApplication() {
 
         <aside className="sticky analyst-sidebar">
           <Link to="/analyst" className="btn analyst-return">← Очередь заявок</Link>
-          {app.allowed_actions.length > 0 ? <DecisionForm app={app} onDone={res.setData} /> : (
+          {app.allowed_actions.length > 0 ? <DecisionForm key={app.id} app={app} onDone={res.setData} /> : (
             <section className="panel">
               <div className="panel-title"><h3>Маршрут</h3></div>
               <Route items={app.timeline} live={LIVE.has(app.status.code)} />
@@ -112,7 +113,7 @@ function ScoreTab({ app }: { app: AA }) {
           <div className="small muted">балл из 100, базовое значение {sd.base}.<br />Модель: прозрачная балльная (points-v1)</div>
         </div>
       ) : (
-        <div className="callout warn">Скоринг не рассчитан — заявка остановлена до этапа оценки.</div>
+        <div className="callout warn">Оценка пока недоступна. Проверьте данные и источники перед решением.</div>
       )}
       {sd && (
         <div>
@@ -134,10 +135,13 @@ function ScoreTab({ app }: { app: AA }) {
           {d.recommendation && <div className="callout info">{d.recommendation}</div>}
           {d.offer && <p>Предложение: {d.offer.product_name}, {money(d.offer.amount)} на {months(d.offer.term_months)} под {pct(d.offer.rate)}, платёж {money(d.offer.monthly_payment)}.</p>}
           {d.limits && Object.keys(d.limits).length > 0 && (
+            <div><h4>Лимиты модели для исходного запроса</h4>
             <dl className="kv-list">
               {Object.entries(d.limits).map(([k, v]) => <Fragment key={k}><dt>{LIMIT_NAME[k] ?? k}</dt><dd className="num">{money(v)}</dd></Fragment>)}
             </dl>
+            </div>
           )}
+          {d.offer_limits && <div><h4>Лимиты модели для предложения</h4><dl className="kv-list">{Object.entries(d.offer_limits).map(([k, v]) => <Fragment key={k}><dt>{LIMIT_NAME[k] ?? k}</dt><dd className="num">{money(v)}</dd></Fragment>)}</dl></div>}
           {d.rules_fired && <p className="small muted">Сработавшие правила: {d.rules_fired.join(", ")}</p>}
           {d.analyst_comment && <p className="small">Комментарий аналитика: {d.analyst_comment}</p>}
         </div>
@@ -176,8 +180,8 @@ function AuditTab({ app }: { app: AA }) {
         <li key={e.id}>
           <span className="muted">{dateTime(e.created_at)}</span>
           <div>
-            <b>{e.event_type === "STATUS_CHANGED" ? `${e.from_status ?? "—"} → ${e.to_status}` : e.event_type}</b>
-            <span className="muted">, {e.actor_name ?? e.actor_type}</span>
+            <b>{e.event_type === "STATUS_CHANGED" ? `${STATUS_LABELS[e.from_status ?? ""] ?? e.from_status ?? "—"} → ${STATUS_LABELS[e.to_status ?? ""] ?? e.to_status ?? "—"}` : EVENT_LABELS[e.event_type] ?? e.event_type}</b>
+            <span className="muted">, {e.actor_name ?? ACTOR_LABELS[e.actor_type] ?? e.actor_type}</span>
             {e.reason && <div>{e.reason}</div>}
           </div>
         </li>
@@ -188,7 +192,7 @@ function AuditTab({ app }: { app: AA }) {
 
 function DecisionForm({ app, onDone }: { app: AA; onDone: (a: AA) => void }) {
   const proposed = app.decision?.offer;
-  const [action, setAction] = useState<"APPROVE" | "COUNTER_OFFER" | "REJECT" | "REQUEST_INFO">(proposed && proposed.amount < app.amount ? "COUNTER_OFFER" : "APPROVE");
+  const [action, setAction] = useState<"APPROVE" | "COUNTER_OFFER" | "REJECT" | "REQUEST_INFO">(offerDiffers(app, proposed) ? "COUNTER_OFFER" : "APPROVE");
   const [amount, setAmount] = useState(String(proposed?.amount ?? app.amount));
   const [term, setTerm] = useState(String(proposed?.term_months ?? app.term_months));
   const [rate, setRate] = useState(String(proposed?.rate ?? ""));
@@ -219,10 +223,12 @@ function DecisionForm({ app, onDone }: { app: AA; onDone: (a: AA) => void }) {
       </div>
       {withTerms && (
         <div className="stack gap-8">
+          {proposed?.product_code !== app.product.code && proposed && <p className="small">Продукт предложения: {proposed.product_name}</p>}
+          {action === "APPROVE" && (Number(amount) !== app.amount || Number(term) !== app.term_months || proposed?.product_code && proposed.product_code !== app.product.code) && <p className="callout info small">Изменённые сумма, срок или продукт будут оформлены как контрпредложение. Клиент увидит сравнение условий.</p>}
           <div className="field"><label htmlFor="d-amount">Сумма, ₽</label><input id="d-amount" className="input num" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-          <div className="row gap-8">
+          <div className="row gap-8 decision-fields">
             <div className="field grow"><label htmlFor="d-term">Срок, мес.</label><input id="d-term" className="input num" type="number" value={term} onChange={(e) => setTerm(e.target.value)} /></div>
-            <div className="field grow"><label htmlFor="d-rate">Ставка, %</label><input id="d-rate" className="input num" type="number" step="0.1" placeholder="по грейду" value={rate} onChange={(e) => setRate(e.target.value)} /></div>
+            <div className="field grow"><label htmlFor="d-rate">Ставка, % годовых</label><input id="d-rate" className="input num" type="number" step="0.1" placeholder="по категории риска" value={rate} onChange={(e) => setRate(e.target.value)} /></div>
           </div>
         </div>
       )}

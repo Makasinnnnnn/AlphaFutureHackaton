@@ -1,5 +1,6 @@
 """Юнит-тесты доменной логики: скоринг, кредитное решение, state machine, распознавание выписки."""
 import pytest
+from datetime import date
 
 from app.domain.decision import DecisionInput, ProductTerms, decide
 from app.domain.finance import annuity_payment, annuity_principal, payment_schedule, summarize_turnovers
@@ -181,7 +182,7 @@ def test_missing_items_for_equipment_without_docs():
 def test_complete_application_has_no_missing_items():
     fin = {"months": [{"month": f"2026-0{i}", "inflow": 1} for i in range(1, 7)]}
     assert missing_items(product_code="WORKING_CAPITAL", requires_collateral=False, financials=fin,
-                         collateral=None, document_kinds=set()) == []
+                         collateral=None, document_kinds=set(), as_of=date(2026, 7, 1)) == []
 
 
 # ---------- Распознавание выписки ----------
@@ -194,7 +195,7 @@ def test_parse_statement_in_out_columns():
 
 def test_parse_statement_signed_amount_cp1251():
     raw = "date,amount,purpose\n2026-01-10,1000,a\n2026-01-11,-400,b\n2026-02-01,500,c\n2026-03-01,700,d\n".encode("cp1251")
-    r = parse_statement(raw)
+    r = parse_statement(raw, as_of=date(2026, 4, 1))
     assert [m["inflow"] for m in r["months"]] == [1000, 500, 700] and r["months"][0]["outflow"] == 400
     assert not r["warnings"]
 

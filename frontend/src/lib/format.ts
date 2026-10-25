@@ -1,6 +1,7 @@
 const rub = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
+const rubWithKopecks = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export const money = (v: number | null | undefined) => (v == null ? "—" : `${rub.format(v)} ₽`);
+export const money = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? "—" : `${(Math.abs(v - Math.round(v)) < 0.005 ? rub : rubWithKopecks).format(v)} ₽`);
 
 export const compactMoney = (v: number) => {
   if (v >= 1_000_000) return `${(v / 1_000_000).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} млн ₽`;
@@ -37,9 +38,10 @@ export const monthLabel = (ym: string) => {
 };
 
 export function annuity(amount: number, ratePct: number, term: number) {
+  if (![amount, ratePct, term].every(Number.isFinite) || amount <= 0 || term <= 0 || ratePct < 0) return 0;
   const r = ratePct / 100 / 12;
   if (!r) return amount / term;
-  return (amount * r) / (1 - Math.pow(1 + r, -term));
+  return (amount * r) / -Math.expm1(-term * Math.log1p(r));
 }
 
 export const uid = () =>

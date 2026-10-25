@@ -5,7 +5,8 @@
 """
 from __future__ import annotations
 
-MIN_MONTHS = 3
+from datetime import date
+from app.domain.statement_history import history_problem
 
 
 def missing_items(
@@ -15,16 +16,17 @@ def missing_items(
     financials: dict | None,
     collateral: dict | None,
     document_kinds: set[str],
+    as_of: date | None = None,
 ) -> list[dict]:
     items: list[dict] = []
 
     months = (financials or {}).get("months") or []
-    if len(months) < MIN_MONTHS:
+    problem = history_problem(months, as_of)
+    if problem:
         items.append(
             {
                 "code": "STATEMENT",
-                "text": "Загрузите выписку по расчётному счёту за последние 6 месяцев (CSV из интернет-банка) — "
-                "по ней мы оценим обороты без ручного ввода.",
+                "text": problem + " Поддерживается CSV из интернет-банка.",
             }
         )
 
