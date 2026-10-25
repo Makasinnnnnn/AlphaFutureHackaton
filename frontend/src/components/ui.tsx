@@ -5,6 +5,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { type ApiError, type Financials, type TimelineItem } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { compactMoney, dateTime, monthLabel, money, STATUS_TONE, turnoverScale } from "../lib/format";
+import { scrollChartWithWheel } from "../lib/chartScroll";
 
 export function StatusChip({ code, title }: { code: string; title: string }) {
   return <span className={`chip ${STATUS_TONE[code] ?? "neutral"}`}>{title}</span>;
@@ -129,6 +130,13 @@ export function TurnoverBars({ fin }: { fin: Financials }) {
   const [position, setPosition] = useState(0);
   const [scrollLimit, setScrollLimit] = useState(0);
   const latestShown = useRef<string | null>(null);
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element) return;
+    const onWheel = (event: WheelEvent) => scrollChartWithWheel(element, event);
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, []);
   useEffect(() => {
     const element = viewport.current;
     if (!element) return;

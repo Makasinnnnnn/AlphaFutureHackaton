@@ -4,6 +4,7 @@ import { ErrorBox, Loading, Route, StatusChip, TurnoverBars } from "../component
 import { api, download, type AnalystApplication as AA } from "../lib/api";
 import { age, dateTime, money, months, pct } from "../lib/format";
 import { useAction, useResource } from "../lib/hooks";
+import { BackToTop } from "../components/BackToTop";
 
 const LIVE = new Set(["SUBMITTED", "VALIDATION", "ENRICHMENT", "SCORING"]);
 const SOURCE_NAME: Record<string, string> = { EGRUL: "ЕГРЮЛ/ЕГРИП", FNS: "ФНС, «Прозрачный бизнес»", BKI: "Бюро кредитных историй" };
@@ -84,7 +85,8 @@ export default function AnalystApplication() {
           )}
         </div>
 
-        <aside className="sticky">
+        <aside className="sticky analyst-sidebar">
+          <Link to="/analyst" className="btn analyst-return">← Очередь заявок</Link>
           {app.allowed_actions.length > 0 ? <DecisionForm app={app} onDone={res.setData} /> : (
             <section className="panel">
               <div className="panel-title"><h3>Маршрут</h3></div>
@@ -93,6 +95,7 @@ export default function AnalystApplication() {
           )}
         </aside>
       </div>
+      <BackToTop />
     </>
   );
 }
