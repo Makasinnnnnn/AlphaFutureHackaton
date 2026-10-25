@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.domain.finance import summarize_turnovers
+from app.domain.statement_history import contiguous_tail
 from app.integrations.client import IntegrationClient
 from app.models import AccountTurnover, Company
 
@@ -54,7 +55,7 @@ def bank_financials(db: Session, inn: str, months: int = 6) -> dict | None:
     if not rows:
         return None
     month_rows = [{"month": r.month, "inflow": float(r.inflow), "outflow": float(r.outflow)} for r in reversed(rows)]
-    return build_financials("BANK_ACCOUNT", month_rows)
+    return build_financials("BANK_ACCOUNT", contiguous_tail(month_rows))
 
 
 def build_financials(source: str, month_rows: list[dict]) -> dict:

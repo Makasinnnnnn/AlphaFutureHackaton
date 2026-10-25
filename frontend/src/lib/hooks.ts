@@ -9,18 +9,23 @@ export function useResource<T>(load: () => Promise<T>, deps: unknown[], pollMs?:
   const active = useRef(false);
   const generation = useRef(0);
   const requestSequence = useRef(0);
+  const currentData = useRef<T | undefined>(undefined);
+  const timer = useRef<number | undefined>(undefined);
+  const schedule = useRef<() => void>(() => {});
   const loadRef = useRef(load);
   loadRef.current = load;
   const pollRef = useRef(pollMs);
   pollRef.current = pollMs;
 
   const reload = useCallback(async () => {
+    window.clearTimeout(timer.current);
     const resourceGeneration = generation.current;
     const sequence = ++requestSequence.current;
     const isCurrent = () => active.current && resourceGeneration === generation.current && sequence === requestSequence.current;
     try {
       const d = await loadRef.current();
       if (isCurrent()) {
+        currentData.current = d;
         setData(d);
         setError(null);
       }
@@ -29,38 +34,44 @@ export function useResource<T>(load: () => Promise<T>, deps: unknown[], pollMs?:
       if (isCurrent()) setError(e instanceof ApiError ? e : new ApiError(0, "UNKNOWN", String(e)));
       return undefined;
     } finally {
-      if (isCurrent()) setLoading(false);
+      if (isCurrent()) {
+        setLoading(false);
+        schedule.current();
+      }
     }
   }, []);
+
+  schedule.current = () => {
+    window.clearTimeout(timer.current);
+    const ms = active.current ? pollRef.current?.(currentData.current) : null;
+    if (ms) timer.current = window.setTimeout(() => { void reload(); }, ms);
+  };
 
   const updateData = useCallback<typeof setData>((value) => {
     if (!active.current) return;
     ++requestSequence.current;
-    setData(value);
+    const next = typeof value === "function"
+      ? (value as (previous: T | undefined) => T | undefined)(currentData.current) : value;
+    currentData.current = next;
+    setData(next);
     setError(null);
     setLoading(false);
+    schedule.current();
   }, []);
 
   useEffect(() => {
-    let alive = true;
-    let timer: number | undefined;
+    window.clearTimeout(timer.current);
     active.current = true;
     ++generation.current;
+    currentData.current = undefined;
     setData(undefined);
     setError(null);
     setLoading(true);
-    const tick = async () => {
-      const d = await reload();
-      if (!alive) return;
-      const ms = pollRef.current?.(d);
-      if (ms) timer = window.setTimeout(tick, ms);
-    };
-    tick();
+    void reload();
     return () => {
-      alive = false;
       active.current = false;
       ++generation.current;
-      window.clearTimeout(timer);
+      window.clearTimeout(timer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);

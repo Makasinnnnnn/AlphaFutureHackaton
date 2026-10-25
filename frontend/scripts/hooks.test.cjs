@@ -9,7 +9,8 @@ const deferred = () => { let resolve, reject; const promise = new Promise((a, b)
 const flush = async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); };
 
 function harness() {
-  const slots = []; let cursor = 0, pending = [], load, deps, result;
+  const slots = []; let cursor = 0, pending = [], load, deps, result, poll, timerId = 0;
+  const timers = new Map();
   const same = (a, b) => a && b && a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
   const react = {
     useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
@@ -20,14 +21,17 @@ function harness() {
   class ApiError extends Error { constructor(status, code, message) { super(message); this.status = status; this.code = code; } }
   const mod = { exports: {} };
   const output = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/hooks.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-  vm.runInNewContext(output, { module: mod, exports: mod.exports, require: n => n === 'react' ? react : { ApiError }, window: { setTimeout, clearTimeout } });
-  const render = (nextLoad = load, nextDeps = deps) => {
-    load = nextLoad; deps = nextDeps; cursor = 0; pending = [];
-    result = mod.exports.useResource(load, deps);
+  vm.runInNewContext(output, { module: mod, exports: mod.exports, require: n => n === 'react' ? react : { ApiError }, window: {
+    setTimeout: fn => { timers.set(++timerId, fn); return timerId; },
+    clearTimeout: id => timers.delete(id),
+  } });
+  const render = (nextLoad = load, nextDeps = deps, nextPoll = poll) => {
+    load = nextLoad; deps = nextDeps; poll = nextPoll; cursor = 0; pending = [];
+    result = mod.exports.useResource(load, deps, poll);
     pending.forEach(effect => effect());
     return result;
   };
-  return { render, unmount: () => slots.forEach(slot => slot?.cleanup?.()) };
+  return { render, timers, tick: async () => { const [id, fn] = timers.entries().next().value; timers.delete(id); await fn(); await flush(); }, unmount: () => slots.forEach(slot => slot?.cleanup?.()) };
 }
 
 test('late response for previous application cannot replace current application', async () => {
@@ -39,6 +43,36 @@ test('late response for previous application cannot replace current application'
   a.resolve('application-1'); await flush();
   assert.equal(h.render().data, 'application-2');
   h.unmount();
+});
+
+test('submitting a saved draft starts polling and a final decision stops it', async () => {
+  const h = harness(); let calls = 0;
+  h.render(async () => { calls++; return { status: calls === 1 ? 'DRAFT' : 'APPROVED' }; }, [1],
+    value => value?.status === 'SUBMITTED' ? 1200 : null);
+  await flush();
+  assert.equal(h.timers.size, 0);
+  h.render().setData({ status: 'SUBMITTED' });
+  assert.equal(h.timers.size, 1);
+  await h.tick();
+  assert.equal(h.render().data.status, 'APPROVED');
+  assert.equal(h.timers.size, 0);
+  h.unmount();
+});
+
+test('transient poll failure keeps the last status and retries automatically', async () => {
+  const h = harness(); let calls = 0;
+  h.render(async () => { calls++; if (calls === 2) throw new Error('network'); return { status: calls >= 3 ? 'APPROVED' : 'SUBMITTED' }; }, [1],
+    value => value?.status === 'SUBMITTED' ? 1200 : null);
+  await flush();
+  await h.tick();
+  assert.equal(h.render().data.status, 'SUBMITTED');
+  assert.ok(h.render().error);
+  assert.equal(h.timers.size, 1);
+  await h.tick();
+  assert.equal(h.render().data.status, 'APPROVED');
+  assert.equal(h.render().error, null);
+  h.unmount();
+  assert.equal(h.timers.size, 0);
 });
 test('changing application clears old data even if new request fails', async () => {
   const h = harness(); h.render(async () => 'application-1', [1]); await flush();

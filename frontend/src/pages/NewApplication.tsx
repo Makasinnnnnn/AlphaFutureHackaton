@@ -35,12 +35,17 @@ export function ApplicationForm({ sourceId = null, mode = "copy" }: { sourceId?:
   const [rec, setRec] = useState<RecommendResult | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [amount, setAmount] = useState(1_000_000);
+  const [amountInput, setAmountInput] = useState<string | null>(null);
   const [term, setTerm] = useState(12);
   const [equipment, setEquipment] = useState({ equipment_name: "", equipment_cost: "", supplier: "" });
   const [draft, setDraft] = useState<Application | null>(null);
   const [consent, setConsent] = useState(false);
   const [idemKey] = useState(uid);
   const act = useAction();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [step]);
 
   useEffect(() => {
     if (!sourceId || !source.data || products.loading || initialized) return;
@@ -92,6 +97,7 @@ export function ApplicationForm({ sourceId = null, mode = "copy" }: { sourceId?:
     setConsent(false);
     if (product?.code === p.code) { setProduct(null); return; }
     setProduct(p);
+    setAmountInput(null);
     setAmount((a) => Math.min(Math.max(a, p.min_amount), p.max_amount));
     setTerm((t) => Math.min(Math.max(t, p.min_term_months), p.max_term_months));
   };
@@ -144,6 +150,8 @@ export function ApplicationForm({ sourceId = null, mode = "copy" }: { sourceId?:
     });
 
   if (source.error || initializationError) return <ErrorBox error={source.error ?? initializationError} />;
+  if (purposes.error || products.error) return <ErrorBox error={purposes.error ?? products.error}
+    onRetry={() => { void purposes.reload(); void products.reload(); }} />;
   if (purposes.loading || products.loading || !initialized) return <Loading />;
 
   return (
@@ -222,8 +230,13 @@ export function ApplicationForm({ sourceId = null, mode = "copy" }: { sourceId?:
             <button className="btn text" onClick={() => navigateStep(0)}>Сменить продукт</button>
           </div>
           <div className="field">
-            <TextField id="amount-value" label={product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма кредита"} suffix="₽" className="num" inputMode="numeric" value={amount.toLocaleString("ru-RU")} onChange={(e) => { const digits = e.target.value.replace(/[^0-9]/g, ""); if (digits.length <= 12) setAmount(Number(digits)); }} onBlur={() => setAmount(Math.min(product.max_amount, Math.max(product.min_amount, amount)))} />
-            <input id="amount" aria-label="Сумма кредита — ползунок" type="range" min={product.min_amount} max={product.max_amount} step={50_000} value={amount} style={{ "--range-progress": `${Math.min(100, Math.max(0, (amount - product.min_amount) / (product.max_amount - product.min_amount) * 100))}%` } as CSSProperties} onChange={(e) => setAmount(Number(e.target.value))} />
+            <TextField id="amount-value" label={product.code === "OVERDRAFT" ? "Лимит овердрафта" : "Сумма кредита"} suffix="₽" className="num" inputMode="decimal" value={amountInput ?? amount.toLocaleString("ru-RU")} onChange={(e) => {
+              const value = e.target.value.replace(/\s/g, "");
+              if (!/^\d{0,12}([,.]\d{0,2})?$/.test(value)) return;
+              setAmountInput(e.target.value);
+              setAmount(Number(value.replace(",", ".")) || 0);
+            }} onBlur={() => { setAmount(Math.min(product.max_amount, Math.max(product.min_amount, amount))); setAmountInput(null); }} />
+            <input id="amount" aria-label="Сумма кредита — ползунок" type="range" min={product.min_amount} max={product.max_amount} step={50_000} value={amount} style={{ "--range-progress": `${Math.min(100, Math.max(0, (amount - product.min_amount) / (product.max_amount - product.min_amount) * 100))}%` } as CSSProperties} onChange={(e) => { setAmount(Number(e.target.value)); setAmountInput(null); }} />
             <span className="hint">От {money(product.min_amount)} до {money(product.max_amount)}</span>
           </div>
           {product.min_term_months !== product.max_term_months ? (

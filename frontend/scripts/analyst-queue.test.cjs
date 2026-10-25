@@ -36,6 +36,7 @@ test('back-to-top appears after scrolling, returns to the top and removes its li
  let visible=false;const listeners={};const cleanups=[];const scrolls=[];
  const react={useState:()=>[visible,v=>{visible=v;}],useEffect:fn=>{cleanups.push(fn());}};
  const window={scrollY:0,addEventListener:(n,f)=>{listeners[n]=f;},removeEventListener:n=>{delete listeners[n];},scrollTo:o=>scrolls.push(o)};
- const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/components/BackToTop.tsx'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{exports,require:n=>n==='react'?react:{jsx,jsxs:jsx},window});
+ const document={activeElement:null,addEventListener:()=>{},removeEventListener:()=>{}};
+ const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/components/BackToTop.tsx'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{exports,require:n=>n==='react'?react:{jsx,jsxs:jsx},window,document});
  assert.equal(exports.BackToTop(),null);window.scrollY=600;listeners.scroll();const tree=exports.BackToTop();assert.equal(tree.props['aria-label'],'Вернуться наверх');tree.props.onClick();assert.equal(scrolls[0].top,0);cleanups.forEach(f=>f());assert.equal(listeners.scroll,undefined);
 });

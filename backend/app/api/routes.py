@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, Form, Header, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, Path, Query, Response, UploadFile
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
@@ -53,6 +53,7 @@ ERRORS = {400: {"model": ErrorOut}, 401: {"model": ErrorOut}, 403: {"model": Err
 DbDep = Annotated[Session, Depends(get_db)]
 ClientDep = Annotated[User, Depends(require_client)]
 AnalystDep = Annotated[User, Depends(require_analyst)]
+DbId = Annotated[int, Path(ge=1, le=2**31 - 1)]
 
 # ---------------- Health ----------------
 health = APIRouter(tags=["health"])
@@ -101,7 +102,7 @@ DEMO_SCENARIOS = {
 @api.post("/auth/login", response_model=TokenOut, tags=["auth"], summary="Вход по email и паролю")
 def login(data: LoginIn, db: DbDep) -> TokenOut:
     user = db.scalars(select(User).where(User.email == data.email.lower().strip())).first()
-    if user is None or not verify_password(data.password, user.password_hash):
+    if user is None or not user.is_active or not verify_password(data.password, user.password_hash):
         raise DomainError("INVALID_CREDENTIALS", "Неверный email или пароль", 401)
     return TokenOut(access_token=create_token(user), user=UserOut.model_validate(user))
 
@@ -120,7 +121,7 @@ def demo_accounts(db: DbDep) -> list[DemoAccountOut]:
     return [
         DemoAccountOut(email=u.email, password="demo2026", role=u.role, full_name=u.full_name,
                        company_name=u.company.name if u.company else None, scenario=DEMO_SCENARIOS.get(u.email, ""))
-        for u in users if u.email in DEMO_SCENARIOS
+        for u in users if u.is_active and u.email in DEMO_SCENARIOS
     ]
 
 
@@ -182,42 +183,42 @@ def create_application(
 
 
 @api.get("/applications/{app_id}", response_model=ApplicationOut, tags=["client-applications"])
-def get_application(app_id: int, user: ClientDep, db: DbDep) -> ApplicationOut:
+def get_application(app_id: DbId, user: ClientDep, db: DbDep) -> ApplicationOut:
     return application_out(svc.get_client_app(db, user, app_id))
 
 
 @api.patch("/applications/{app_id}", response_model=ApplicationOut, tags=["client-applications"],
            summary="Изменить черновик или дополнить заявку по запросу банка")
-def update_application(app_id: int, data: ApplicationUpdate, user: ClientDep, db: DbDep) -> ApplicationOut:
+def update_application(app_id: DbId, data: ApplicationUpdate, user: ClientDep, db: DbDep) -> ApplicationOut:
     return application_out(svc.update_application(db, user, app_id, data))
 
 
 @api.post("/applications/{app_id}/submit", response_model=ApplicationOut, tags=["client-applications"],
           summary="Отправить заявку в банк (DRAFT → SUBMITTED). Идемпотентно.")
-def submit_application(app_id: int, data: SubmitIn, user: ClientDep, db: DbDep) -> ApplicationOut:
+def submit_application(app_id: DbId, data: SubmitIn, user: ClientDep, db: DbDep) -> ApplicationOut:
     return application_out(svc.submit(db, user, app_id))
 
 
 @api.post("/applications/{app_id}/resubmit", response_model=ApplicationOut, tags=["client-applications"],
           summary="Отправить дополненную заявку (NEED_INFO → VALIDATION)")
-def resubmit_application(app_id: int, user: ClientDep, db: DbDep) -> ApplicationOut:
+def resubmit_application(app_id: DbId, user: ClientDep, db: DbDep) -> ApplicationOut:
     return application_out(svc.resubmit(db, user, app_id))
 
 
 @api.post("/applications/{app_id}/cancel", response_model=ApplicationOut, tags=["client-applications"])
-def cancel_application(app_id: int, data: CancelIn, user: ClientDep, db: DbDep) -> ApplicationOut:
+def cancel_application(app_id: DbId, data: CancelIn, user: ClientDep, db: DbDep) -> ApplicationOut:
     return application_out(svc.cancel(db, user, app_id, data.reason))
 
 
 @api.post("/applications/{app_id}/accept", response_model=ApplicationOut, tags=["client-applications"],
           summary="Принять предложение банка → формирование договора (SIGNING)")
-def accept_offer(app_id: int, user: ClientDep, db: DbDep) -> ApplicationOut:
+def accept_offer(app_id: DbId, user: ClientDep, db: DbDep) -> ApplicationOut:
     return application_out(svc.accept_offer(db, user, app_id))
 
 
 @api.post("/applications/{app_id}/sign", response_model=ApplicationOut, tags=["client-applications"],
           summary="Подписать договор (симуляция ПЭП) и получить средства (симуляция)")
-def sign_agreement(app_id: int, data: SignIn, user: ClientDep, db: DbDep) -> ApplicationOut:
+def sign_agreement(app_id: DbId, data: SignIn, user: ClientDep, db: DbDep) -> ApplicationOut:
     if not data.confirm:
         raise DomainError("CONFIRM_REQUIRED", "Подтвердите согласие с условиями договора", 422)
     return application_out(svc.sign(db, user, app_id, data.signer_name))
@@ -227,7 +228,7 @@ def sign_agreement(app_id: int, data: SignIn, user: ClientDep, db: DbDep) -> App
           tags=["client-applications"],
           summary="Загрузить документ. Выписка (STATEMENT, CSV) распознаётся автоматически в помесячные обороты.")
 async def upload_document(
-    app_id: int, user: ClientDep, db: DbDep,
+    app_id: DbId, user: ClientDep, db: DbDep,
     file: Annotated[UploadFile, File()],
     kind: Annotated[str, Form(description="STATEMENT | EQUIPMENT_INVOICE | OTHER")] = "OTHER",
 ) -> ApplicationOut:
@@ -244,7 +245,7 @@ def _doc_response(doc: Document) -> Response:
 
 
 @api.get("/applications/{app_id}/documents/{doc_id}", tags=["client-applications"], response_class=Response)
-def download_document(app_id: int, doc_id: int, user: ClientDep, db: DbDep) -> Response:
+def download_document(app_id: DbId, doc_id: DbId, user: ClientDep, db: DbDep) -> Response:
     app = svc.get_client_app(db, user, app_id)
     doc = next((d for d in app.documents if d.id == doc_id), None)
     if doc is None:
@@ -294,7 +295,7 @@ def analyst_queue_page(
 
 @api.get("/analyst/applications/{app_id}", response_model=AnalystApplicationOut, tags=["analyst"],
          summary="Полная карточка заявки: проверки, скоринг, аудит")
-def analyst_application(app_id: int, _: AnalystDep, db: DbDep) -> AnalystApplicationOut:
+def analyst_application(app_id: DbId, _: AnalystDep, db: DbDep) -> AnalystApplicationOut:
     app = svc.get_app(db, app_id)
     ids = {e.actor_id for e in app.events if e.actor_id}
     users = {u.id: u for u in db.scalars(select(User).where(User.id.in_(ids))).all()} if ids else {}
@@ -303,13 +304,13 @@ def analyst_application(app_id: int, _: AnalystDep, db: DbDep) -> AnalystApplica
 
 @api.post("/analyst/applications/{app_id}/decision", response_model=AnalystApplicationOut, tags=["analyst"],
           summary="Решение аналитика по заявке на ручном рассмотрении")
-def analyst_decision(app_id: int, data: AnalystDecisionIn, analyst: AnalystDep, db: DbDep) -> AnalystApplicationOut:
+def analyst_decision(app_id: DbId, data: AnalystDecisionIn, analyst: AnalystDep, db: DbDep) -> AnalystApplicationOut:
     svc.analyst_decide(db, analyst, app_id, data)
     return analyst_application(app_id, analyst, db)
 
 
 @api.get("/analyst/applications/{app_id}/documents/{doc_id}", tags=["analyst"], response_class=Response)
-def analyst_download(app_id: int, doc_id: int, _: AnalystDep, db: DbDep) -> Response:
+def analyst_download(app_id: DbId, doc_id: DbId, _: AnalystDep, db: DbDep) -> Response:
     doc = db.get(Document, doc_id)
     if doc is None or doc.application_id != app_id:
         raise not_found("Документ")
@@ -363,7 +364,7 @@ def read_all(user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Res
 
 
 @api.post("/notifications/{notification_id}/read", status_code=204, tags=["notifications"])
-def read_notification(notification_id: int, user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Response:
+def read_notification(notification_id: DbId, user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Response:
     item = db.scalar(select(Notification).where(Notification.id == notification_id, Notification.user_id == user.id))
     if item is None:
         raise not_found("Уведомление не найдено.")
@@ -373,7 +374,7 @@ def read_notification(notification_id: int, user: Annotated[User, Depends(get_cu
 
 
 @api.delete("/notifications/{notification_id}", status_code=204, tags=["notifications"])
-def delete_notification(notification_id: int, user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Response:
+def delete_notification(notification_id: DbId, user: Annotated[User, Depends(get_current_user)], db: DbDep) -> Response:
     item = db.scalar(select(Notification).where(Notification.id == notification_id, Notification.user_id == user.id))
     if item is None:
         raise not_found("Уведомление не найдено.")

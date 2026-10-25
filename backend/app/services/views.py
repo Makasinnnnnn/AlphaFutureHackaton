@@ -24,7 +24,7 @@ from app.schemas import (
 )
 from app.services.companies import months_between
 from app.services.products import to_out
-from app.services.request_documents import request_items
+from app.services.request_documents import can_resubmit, request_items
 
 DECISION_STEP = "DECISION"
 
@@ -104,6 +104,9 @@ def _estimate_payment(app: Application) -> float | None:
 
 def application_out(app: Application) -> ApplicationOut:
     purpose = PURPOSES.get(app.purpose or "")
+    actions = CLIENT_ACTIONS.get(Status(app.status), [])
+    if app.status == Status.NEED_INFO and not can_resubmit(app):
+        actions = [action for action in actions if action != 'RESUBMIT']
     return ApplicationOut(
         id=app.id,
         number=app.number,
@@ -126,7 +129,7 @@ def application_out(app: Application) -> ApplicationOut:
         agreement=app.agreement,
         timeline=timeline(app),
         documents=[DocumentOut.model_validate(d) for d in app.documents],
-        allowed_actions=CLIENT_ACTIONS.get(Status(app.status), []),
+        allowed_actions=actions,
         company=company_out(app),
         created_at=app.created_at,
         submitted_at=app.submitted_at,

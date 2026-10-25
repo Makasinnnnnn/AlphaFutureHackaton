@@ -25,6 +25,7 @@ export default function AnalystApplication() {
 
   return (
     <>
+      <ErrorBox error={res.error} onRetry={res.reload} />
       <Link to="/analyst" className="back">← Очередь заявок</Link>
       <div className="page-head">
         <div>
