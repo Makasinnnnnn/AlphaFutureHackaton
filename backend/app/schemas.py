@@ -120,7 +120,7 @@ class RecommendOut(BaseModel):
 class CollateralIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     equipment_name: str | None = Field(default=None, max_length=255)
-    equipment_cost: float | None = Field(default=None, gt=0, le=1_000_000_000)
+    equipment_cost: float | None = Field(default=None, gt=0, le=1_000_000_000, multiple_of=0.01)
     supplier: str | None = Field(default=None, max_length=255)
 
 
@@ -128,7 +128,7 @@ class ApplicationCreate(BaseModel):
     product_code: str
     purpose: str | None = None
     purpose_comment: str | None = Field(default=None, max_length=1000)
-    amount: float = Field(gt=0, le=1_000_000_000)
+    amount: float = Field(gt=0, le=1_000_000_000, multiple_of=0.01)
     term_months: int = Field(ge=1, le=120)
     collateral: CollateralIn | None = None
 
@@ -137,7 +137,7 @@ class ApplicationUpdate(BaseModel):
     product_code: str | SkipJsonSchema[None] = None
     purpose: str | None = None
     purpose_comment: str | None = Field(default=None, max_length=1000)
-    amount: Annotated[float, Field(gt=0, le=1_000_000_000)] | SkipJsonSchema[None] = None
+    amount: Annotated[float, Field(gt=0, le=1_000_000_000, multiple_of=0.01)] | SkipJsonSchema[None] = None
     term_months: Annotated[int, Field(ge=1, le=120)] | SkipJsonSchema[None] = None
     collateral: CollateralIn | None = None
     version: int | None = Field(default=None, description="Для оптимистической блокировки")
@@ -291,7 +291,7 @@ class AnalystDecisionIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     action: Literal["APPROVE", "COUNTER_OFFER", "REJECT", "REQUEST_INFO"] = Field(description="Изменение суммы, срока или продукта при APPROVE оформляется как COUNTER_OFFER")
     version: int = Field(description="Версия заявки, которую видел аналитик (оптимистическая блокировка)")
-    amount: float | None = Field(default=None, gt=0)
+    amount: float | None = Field(default=None, gt=0, le=1_000_000_000, multiple_of=0.01)
     term_months: int | None = Field(default=None, ge=1, le=120)
     rate: float | None = Field(default=None, gt=0, lt=100)
     product_code: str | None = None

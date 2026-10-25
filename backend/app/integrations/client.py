@@ -10,6 +10,7 @@ import logging
 import math
 import time
 from dataclasses import dataclass
+from datetime import date
 
 import httpx
 
@@ -35,6 +36,19 @@ def validate_payload(source: str, data: object) -> dict:
             raise ValueError(f'Отсутствует или некорректен признак источника: {field}')
     if source == 'EGRUL' and data.get('status') not in {'ACTIVE'} | STOP_REGISTRY_STATUSES:
         raise ValueError('Источник не вернул известный статус компании')
+    if source == 'EGRUL':
+        for field, maximum in {'name': 500, 'legal_form': 8, 'ogrn': 15, 'okved': 16,
+                               'okved_name': 500, 'address': 500, 'director': 255}.items():
+            value = data.get(field)
+            if value is not None and (not isinstance(value, str) or len(value) > maximum):
+                raise ValueError(f'Некорректное текстовое поле реестра: {field}')
+        registered = data.get('registered_at')
+        if registered is not None:
+            if not isinstance(registered, str):
+                raise ValueError('Некорректная дата регистрации')
+            registered_date = date.fromisoformat(registered)
+            if registered_date > date.today():
+                raise ValueError('Дата регистрации находится в будущем')
     return data
 
 
@@ -68,6 +82,8 @@ class IntegrationClient:
                     r = client.get(path)
                     if r.status_code == 200:
                         data = validate_payload(source, r.json())
+                        if data.get('inn') != path.rsplit('/', 1)[-1]:
+                            raise ValueError('ИНН в ответе источника не совпадает с запросом')
                         return CallResult(source, "OK", data, None, int((time.monotonic() - started) * 1000), attempt)
                     if r.status_code == 404:
                         return CallResult(source, "NOT_FOUND", None, "Не найдено в источнике",

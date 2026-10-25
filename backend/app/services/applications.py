@@ -20,7 +20,7 @@ from app.models import Application, Document, Product, User
 from app.schemas import AnalystDecisionIn, ApplicationCreate, ApplicationUpdate
 from app.services.companies import bank_financials, build_financials
 from app.services.products import to_terms
-from app.services.request_documents import request_items
+from app.services.request_documents import can_resubmit, request_items
 from app.services.workflow import add_event, now, transition
 
 ALLOWED_DOC_KINDS = {"STATEMENT", "EQUIPMENT_INVOICE", "OTHER"}
@@ -167,12 +167,10 @@ def resubmit(db: Session, user: User, app_id: int) -> Application:
     app = get_client_app(db, user, app_id, for_update=True)
     if Status(app.status) != Status.NEED_INFO:
         raise conflict("Повторно отправить можно только заявку, по которой запрошены данные.")
+    if not can_resubmit(app):
+        raise conflict("Дополните все запрошенные данные и приложите актуальные документы перед повторной отправкой.")
     requests = [i for i in (request_items(app) or []) if i.get("code") == "ANALYST_REQUEST"]
     if requests:
-        for item in requests:
-            baseline = item.get("document_ids_before_request")
-            if baseline is None or not any(d.id not in baseline for d in app.documents):
-                raise conflict("Приложите новый документ в ответ на запрос специалиста.")
         app.missing_items = None
         transition(db, app, Status.MANUAL_REVIEW, Actor.CLIENT, user.id,
                    reason="Клиент приложил документы; специалист проверит ответ на дозапрос",

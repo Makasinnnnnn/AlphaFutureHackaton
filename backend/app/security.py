@@ -46,7 +46,7 @@ def get_current_user(
         payload = jwt.decode(creds.credentials, get_settings().jwt_secret, algorithms=["HS256"],
                              options={"require": ["sub", "exp", "iat"]})
         user_id = int(payload['sub'])
-        if not 0 < user_id <= 2**63 - 1:
+        if not 0 < user_id <= 2**31 - 1:
             raise ValueError('Invalid user ID')
     except (jwt.PyJWTError, ValueError, TypeError, KeyError, OverflowError):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Сессия истекла или недействительна") from None

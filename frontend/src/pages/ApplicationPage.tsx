@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { DocumentsBlock } from "../components/Documents";
-import { hasPendingAnalystRequest } from "../lib/documents";
 import { repaymentEstimate } from "../lib/offerComparison";
 import { ErrorBox, Loading, Money, Route, StatusChip, TurnoverBars } from "../components/ui";
 import { api, download, type Application } from "../lib/api";
@@ -25,6 +24,7 @@ export default function ApplicationPage() {
 
   return (
     <>
+      <ErrorBox error={res.error} onRetry={res.reload} />
       <Link to="/" className="back">← Все заявки</Link>
       <div className="page-head">
         <div>
@@ -231,9 +231,7 @@ function NeedInfoPanel({ app, onChange }: { app: Application; onChange: (a: Appl
     collateral: { equipment_name: eq.equipment_name, equipment_cost: Number(eq.equipment_cost) || null, supplier: eq.supplier || null },
   })));
   const eqSaved = !!(app.collateral?.equipment_name && app.collateral?.equipment_cost);
-  const statementOk = (app.financials?.months_count ?? 0) >= 3;
-  const invoiceOk = app.documents.some((d) => d.kind === "EQUIPMENT_INVOICE");
-  const done = (!codes.has("STATEMENT") || statementOk) && (!codes.has("EQUIPMENT_INFO") || eqSaved) && (!codes.has("EQUIPMENT_INVOICE") || invoiceOk) && !hasPendingAnalystRequest(app);
+  const done = app.allowed_actions.includes("RESUBMIT");
 
   return (
     <section className="panel stack gap-16">

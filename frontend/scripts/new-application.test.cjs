@@ -7,10 +7,10 @@ const ts=require(process.env.TYPESCRIPT_PATH || 'typescript');
 
 // Exercise the real page's handlers and rendered buttons without network or a DB.
 function harness(options={}){
- const states=[];let cursor=0;const saves=[];const operations=[];const effects=[];let effectCursor=0;const effectDeps=[];
+ const states=[];let cursor=0;const saves=[];const operations=[];const effects=[];const scrolls=[];let effectCursor=0;const effectDeps=[];
  const product={code:'OVERDRAFT',name:'Овердрафт',min_amount:100000,max_amount:5000000,min_term_months:12,max_term_months:12,base_rate:18,requires_collateral:false};
  const rec={purpose:'GAP',purpose_title:'Кассовый разрыв',recommendations:[{product,rank:1,estimated_rate_from:18,why:'Оборотное финансирование'}]};
- const sourceApplication={id:42,number:'APP-42',version:7,status:{code:options.status??'DRAFT'},product,purpose:'GAP',purpose_comment:'Закупка',amount:2300000,term_months:12,collateral:{equipment_name:'Станок',equipment_cost:100000,supplier:'Завод'},documents:[{id:1,filename:'original.csv'}],financials:null};
+ const sourceApplication={id:42,number:'APP-42',version:7,status:{code:options.status??'DRAFT'},product,purpose:'GAP',purpose_comment:'Закупка',amount:options.amount??2300000,term_months:12,collateral:{equipment_name:'Станок',equipment_cost:100000,supplier:'Завод'},documents:[{id:1,filename:'original.csv'}],financials:null};
  const catalog=[product];const purposeList=[{code:'GAP',title:'Кассовый разрыв',hint:''}];
  const api={purposes(){},products(){},bankFinancials(){},recommend:async()=>rec,
   create:async(body)=>{operations.push({method:"create"});saves.push(body);return {...body,id:1,version:1,product,documents:[],financials:null};},
@@ -30,7 +30,7 @@ function harness(options={}){
  };
  const source=fs.readFileSync(path.join(__dirname,'../src/pages/NewApplication.tsx'),'utf8');
  const output=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- const module={exports:{}};vm.runInNewContext(output,{module,exports:module.exports,require:name=>{assert.ok(stubs[name],name);return stubs[name];}});
+ const module={exports:{}};vm.runInNewContext(output,{module,exports:module.exports,window:{scrollTo:options=>scrolls.push(options)},require:name=>{assert.ok(stubs[name],name);return stubs[name];}});
  let tree;const render=()=>{cursor=0;effectCursor=0;tree=module.exports.ApplicationForm(options);while(effects.length)effects.shift()();return tree;};
  const all=()=>{const nodes=[];function walk(n){if(Array.isArray(n)){n.forEach(walk);return;}if(n&&typeof n==='object'){nodes.push(n);walk(n.props?.children);}}walk(tree);return nodes;};
  const text=n=>Array.isArray(n)?n.map(text).join(''):n&&typeof n==='object'?text(n.props?.children):n??'';
@@ -38,7 +38,7 @@ function harness(options={}){
  const click=async label=>{const node=button(label);assert.ok(!node.props.disabled,`${label} must be enabled`);await node.props.onClick();render();};
  const active=()=>all().find(n=>n.type==='button'&&n.props['aria-current']==='step');
  const field=id=>all().find(n=>n.type==='TextField'&&n.props.id===id);
- render();return{render,all,text,button,click,active,field,saves,operations,ready:async()=>{await Promise.resolve();await Promise.resolve();render();}};
+ render();return{render,all,text,button,click,active,field,saves,operations,scrolls,ready:async()=>{await Promise.resolve();await Promise.resolve();render();}};
 }
 
 test('task can be deselected; selecting a product does not advance automatically',async()=>{
@@ -50,9 +50,25 @@ test('task can be deselected; selecting a product does not advance automatically
  await card.props.onClick();h.render();
  assert.equal(h.text(h.active()),'1Задача');assert.equal(h.button('Продолжить').props.disabled,false);
  await h.click('Продолжить');assert.equal(h.text(h.active()),'2Условия');
+ assert.equal(h.scrolls.at(-1).top,0);
+ assert.equal(h.scrolls.length,2);
  assert.ok(h.field('amount-value'));assert.ok(h.field('fixed-term'));
  await h.click('← Назад');assert.equal(h.text(h.active()),'1Задача');
  assert.equal(h.button('Продолжить').props.disabled,false);
+});
+
+test('editing kopecks preserves the decimal separator and fractional input',async()=>{
+ const h=harness({sourceId:42,mode:'edit',amount:1000000.99});await h.ready();
+ h.field('amount-value').props.onChange({target:{value:'1 000 000,98'}});h.render();
+ assert.equal(h.button('Сохранить и продолжить').props.disabled,false);
+ await h.click('Сохранить и продолжить');
+ assert.equal(h.saves.at(-1).amount,1000000.98);
+ await h.click('2Условия');
+ h.field('amount-value').props.onChange({target:{value:'1000000,'}});h.render();
+ assert.equal(h.field('amount-value').props.value,'1000000,');
+ h.field('amount-value').props.onChange({target:{value:'1000000,25'}});h.render();
+ await h.click('Сохранить и продолжить');
+ assert.equal(h.saves.at(-1).amount,1000000.25);
 });
 
 test('forward navigation blocks invalid amounts and saves edited values before review',async()=>{

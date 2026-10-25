@@ -102,7 +102,9 @@ def _enrich(db: Session, app: Application, client: IntegrationClient) -> None:
             transition(db, app, Status.REJECTED, Actor.SYSTEM, reason=f"Статус в реестре: {egrul.data.get('status')}")
             return
 
-    failed = [r.source for r in results.values() if r.status == "ERROR"]
+    # A missing risk report is unavailable evidence, never proof of no debt,
+    # tax arrears or disqualification. Only EGRUL NOT_FOUND is a registry refusal.
+    failed = [r.source for r in results.values() if r.status != "OK"]
     if failed:
         if attempt < s.pipeline_max_enrichment_attempts:
             app.next_action_at = now() + timedelta(seconds=s.pipeline_enrichment_retry_delay_sec * attempt)

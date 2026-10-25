@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 from statistics import mean, pstdev
 
 
@@ -65,27 +66,30 @@ def add_months(d: date, months: int) -> date:
 
 
 def payment_schedule(principal: float, annual_rate_pct: float, months: int, start: date) -> list[dict]:
-    payment = annuity_payment(principal, annual_rate_pct, months)
-    r = annual_rate_pct / 100 / 12
-    balance = principal
+    # Round actual cash flows, then carry the rounded balance forward. Rounding
+    # independent floating-point columns loses kopecks and breaks row totals.
+    cent = Decimal('0.01')
+    balance = Decimal(str(principal)).quantize(cent, rounding=ROUND_HALF_UP)
+    payment = Decimal(str(annuity_payment(principal, annual_rate_pct, months))).quantize(cent, rounding=ROUND_HALF_UP)
+    r = Decimal(str(annual_rate_pct)) / Decimal(1200)
     rows = []
     for i in range(1, months + 1):
-        interest = balance * r
-        body = payment - interest
+        interest = (balance * r).quantize(cent, rounding=ROUND_HALF_UP)
+        body = min(max(payment - interest, Decimal(0)), balance)
         if i == months:
             body = balance
             payment_i = body + interest
         else:
-            payment_i = payment
-        balance = max(balance - body, 0.0)
+            payment_i = body + interest
+        balance -= body
         rows.append(
             {
                 "n": i,
                 "date": add_months(start, i).isoformat(),
-                "payment": round(payment_i, 2),
-                "principal": round(body, 2),
-                "interest": round(interest, 2),
-                "balance": round(balance, 2),
+                "payment": float(payment_i),
+                "principal": float(body),
+                "interest": float(interest),
+                "balance": float(balance),
             }
         )
     return rows
