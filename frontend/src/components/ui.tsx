@@ -93,7 +93,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <button className="btn text" onClick={() => { logout(); nav("/login"); }}>Выйти</button>
         </div>
       </header>
-      <main className="page">{children}</main>
+      <main className="page">{children}<footer className="app-footer"><a href="/install.html">Как установить приложение</a></footer></main>
     </>
   );
 }
