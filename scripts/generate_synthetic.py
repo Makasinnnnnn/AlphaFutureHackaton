@@ -9,8 +9,7 @@
 """
 import csv
 import json
-import math
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

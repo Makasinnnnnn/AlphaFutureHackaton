@@ -3293,7 +3293,8 @@
               "REJECT",
               "REQUEST_INFO"
             ],
-            "title": "Action"
+            "title": "Action",
+            "description": "Изменение суммы, срока или продукта при APPROVE оформляется как COUNTER_OFFER"
           },
           "version": {
             "type": "integer",

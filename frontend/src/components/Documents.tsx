@@ -46,7 +46,7 @@ export function DocumentsBlock({ app, onChange, needStatement, only }: {
       {needStatement && show("STATEMENT") && (
         <Upload app={app} kind="STATEMENT" accept=".csv,text/csv" onChange={onChange}
           title="Выписка по расчётному счёту"
-          hint="CSV из интернет-банка за 6 месяцев. Колонки «Дата» и «Сумма» или «Приход»/«Расход»." />
+          hint="CSV: минимум 3 последовательных месяца, лучше 6. Последний месяц — не старше 2 месяцев. Колонки «Дата» и «Сумма» или «Приход»/«Расход»." />
       )}
       {app.product.requires_collateral && show("EQUIPMENT_INVOICE") && (
         <Upload app={app} kind="EQUIPMENT_INVOICE" accept=".pdf,.png,.jpg,.jpeg" onChange={onChange}

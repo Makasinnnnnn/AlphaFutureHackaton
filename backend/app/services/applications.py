@@ -9,7 +9,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
-from app.domain.decision import rate_for
+from app.domain.decision import rate_for, monthly_load, max_amount_for_term, DecisionInput
+from app.domain.statement_history import contiguous_tail
 from app.domain.finance import annuity_payment, overdraft_monthly_cost, payment_schedule
 from app.domain.purposes import PURPOSES
 from app.domain.statement_parser import StatementParseError, parse_statement
@@ -270,7 +271,7 @@ def upload_document(db: Session, user: User, app_id: int, kind: str, filename: s
         except StatementParseError as e:
             raise DomainError("STATEMENT_PARSE_ERROR", str(e), 422) from e
         # распознанная выписка заменяет ручной ввод оборотов
-        months = parsed["months"][-6:]
+        months = contiguous_tail(parsed["months"])[-6:]
         app.financials = build_financials("STATEMENT_UPLOAD", [
             {"month": m["month"], "inflow": m["inflow"], "outflow": m["outflow"]} for m in months
         ])
@@ -310,16 +311,30 @@ def analyst_decide(db: Session, analyst: User, app_id: int, data: AnalystDecisio
 
     if data.action in ("APPROVE", "COUNTER_OFFER"):
         product = _product(db, data.product_code or proposed.get("product_code") or app.product_code)
-        amount = data.amount or proposed.get("amount") or float(app.amount)
+        amount = round(float(data.amount or proposed.get("amount") or app.amount), 2)
         term = data.term_months or proposed.get("term_months") or app.term_months
         _check_params(product, float(amount), int(term))
         rate = data.rate or proposed.get("rate") or rate_for(to_terms(product), app.score_grade or "C")
         payment = overdraft_monthly_cost(amount, rate) if product.rules.get("is_overdraft") \
             else annuity_payment(float(amount), float(rate), int(term))
-        offer = {"product_code": product.code, "product_name": product.name, "amount": int(amount),
+        offer = {"product_code": product.code, "product_name": product.name, "amount": amount,
                  "term_months": int(term), "rate": float(rate), "monthly_payment": round(payment, 2)}
-        outcome = Status.APPROVED if data.action == "APPROVE" else Status.COUNTER_OFFER
+        changed_terms = product.code != app.product_code or amount != float(app.amount) or int(term) != app.term_months
+        outcome = Status.COUNTER_OFFER if data.action == "COUNTER_OFFER" or changed_terms else Status.APPROVED
+        original_product = to_terms(app.product)
+        original_rate = (prev.get("requested_terms") or {}).get("rate") or rate_for(original_product, app.score_grade or "C")
+        requested_terms = {"rate": original_rate, "is_overdraft": original_product.is_overdraft,
+                           "monthly_payment": round(monthly_load(original_product, float(app.amount), original_rate, app.term_months), 2)}
+        from app.services.pipeline import build_scoring_input
+        profile = build_scoring_input(db, app)
+        limits_input = DecisionInput(float(app.amount), app.term_months, profile.avg_monthly_inflow,
+                                     profile.bki_monthly_payments, profile.business_age_months,
+                                     (app.collateral or {}).get("equipment_cost"))
+        _, original_limits = max_amount_for_term(original_product, limits_input, original_rate, app.term_months)
+        _, offer_limits = max_amount_for_term(to_terms(product), limits_input, rate, int(term))
         app.decision = base | {"outcome": outcome.value, "offer": offer,
+                               "requested_terms": requested_terms,
+                               "limits": original_limits, "offer_limits": offer_limits,
                                "reasons": [{"impact": "neutral", "text": data.comment}] + (prev.get("reasons") or [])}
         transition(db, app, outcome, Actor.ANALYST, analyst.id, reason=data.comment, payload={"offer": offer})
     elif data.action == "REJECT":

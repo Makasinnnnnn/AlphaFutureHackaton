@@ -7,14 +7,35 @@
 from __future__ import annotations
 
 import logging
+import math
 import time
 from dataclasses import dataclass
 
 import httpx
 
 from app.config import get_settings
+from app.domain.scoring import STOP_REGISTRY_STATUSES
 
 log = logging.getLogger("integrations")
+
+
+def validate_payload(source: str, data: object) -> dict:
+    if not isinstance(data, dict):
+        raise ValueError('Источник вернул некорректную структуру данных')
+    numeric = {'FNS': ('tax_arrears',), 'BKI': ('current_overdue_days', 'max_overdue_days_12m', 'total_monthly_payments')}
+    booleans = {'FNS': ('mass_address', 'disqualified_director'), 'BKI': ('has_history',)}
+    for field in numeric.get(source, ()):
+        value = data.get(field)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1e15 or not math.isfinite(value):
+            raise ValueError(f'Некорректное числовое поле источника: {field}')
+        if field.endswith('_days') and int(value) != value:
+            raise ValueError(f'Некорректное число дней: {field}')
+    for field in booleans.get(source, ()):
+        if not isinstance(data.get(field), bool):
+            raise ValueError(f'Отсутствует или некорректен признак источника: {field}')
+    if source == 'EGRUL' and data.get('status') not in {'ACTIVE'} | STOP_REGISTRY_STATUSES:
+        raise ValueError('Источник не вернул известный статус компании')
+    return data
 
 
 @dataclass
@@ -46,12 +67,13 @@ class IntegrationClient:
                 try:
                     r = client.get(path)
                     if r.status_code == 200:
-                        return CallResult(source, "OK", r.json(), None, int((time.monotonic() - started) * 1000), attempt)
+                        data = validate_payload(source, r.json())
+                        return CallResult(source, "OK", data, None, int((time.monotonic() - started) * 1000), attempt)
                     if r.status_code == 404:
                         return CallResult(source, "NOT_FOUND", None, "Не найдено в источнике",
                                           int((time.monotonic() - started) * 1000), attempt)
                     last_err = f"HTTP {r.status_code}"
-                except httpx.HTTPError as e:
+                except (httpx.HTTPError, ValueError, TypeError) as e:
                     last_err = f"{type(e).__name__}: {e}"
                 log.warning("integration call failed", extra={"ctx": {"source": source, "attempt": attempt, "error": last_err}})
                 if attempt < self.retries:

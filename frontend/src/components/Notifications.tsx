@@ -7,7 +7,8 @@ import { useResource } from "../lib/hooks";
 
 const changed = () => window.dispatchEvent(new Event("notifications-changed"));
 export function useNotifications() {
-  const resource = useResource(api.notifications, [], () => 5000);
+  const { user } = useAuth();
+  const resource = useResource(api.notifications, [user?.id], () => 5000);
   useEffect(() => {
     const refresh = () => { void resource.reload(); };
     window.addEventListener("notifications-changed", refresh);

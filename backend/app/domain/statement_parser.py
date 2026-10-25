@@ -1,6 +1,6 @@
 """Распознавание банковской выписки (CSV) → помесячные обороты.
 
-Клиенты, у которых нет счёта в банке, загружают выписку из другого банка. Вместо
+Клиенты без доступной истории оборотов загружают выписку из другого банка. Вместо
 ручного ввода выручки система сама считает поступления и списания по месяцам.
 Поддерживаются популярные варианты выгрузок:
 - колонки «Дата; Сумма» (знак суммы = направление);
@@ -13,6 +13,7 @@ import csv
 import io
 import math
 import re
+from app.domain.statement_history import contiguous_tail, history_problem
 from collections import defaultdict
 from datetime import date, datetime
 
@@ -68,7 +69,7 @@ def _find(header: list[str], keys: tuple[str, ...]) -> int | None:
     return None
 
 
-def parse_statement(raw: bytes) -> dict:
+def parse_statement(raw: bytes, *, as_of: date | None = None) -> dict:
     text = _decode(raw).strip()
     if not text:
         raise StatementParseError("Файл пустой.")
@@ -99,7 +100,7 @@ def parse_statement(raw: bytes) -> dict:
         if len(r) <= max(required):
             raise StatementParseError(f"В строке {row_number} не хватает колонок.")
         d = _date(r[i_date])
-        if d > date.today():
+        if d > (as_of or date.today()):
             raise StatementParseError(f"В строке {row_number} дата операции находится в будущем.")
         key = f"{d.year:04d}-{d.month:02d}"
         if i_in is not None:
@@ -121,6 +122,10 @@ def parse_statement(raw: bytes) -> dict:
         for m, v in sorted(agg.items())
     ]
     warnings = []
-    if len(months) < 3:
-        warnings.append("В выписке меньше 3 месяцев — для оценки нужна выписка минимум за 3, лучше за 6 месяцев.")
+    problem = history_problem(months, as_of)
+    if problem:
+        warnings.append(problem)
+    tail = contiguous_tail(months)
+    if len(tail) < len(months):
+        warnings.append(f"В истории есть пропуски. Для оценки учтён последний непрерывный период: {len(tail)} мес.")
     return {"rows": len(body), "months": months, "warnings": warnings}

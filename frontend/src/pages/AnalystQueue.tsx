@@ -60,7 +60,7 @@ export default function AnalystQueue() {
           <button type="button" className="panel stat stat-link" aria-pressed={filter === 0} onClick={() => chooseFilter(0)}><b className="num">{s.in_review}</b><span>ждут решения аналитика ↗</span></button>
           <button type="button" className="panel stat stat-link" aria-pressed={filter === 5} onClick={() => chooseFilter(5)}><b className="num">{s.total}</b><span>заявок всего ↗</span></button>
           <button type="button" className="panel stat stat-link" aria-pressed={filter === 3} onClick={() => chooseFilter(3)}><b className="num">{s.approval_rate != null ? `${Math.round(s.approval_rate * 100)}%` : "—"}</b><span>положительных решений ↗</span></button>
-          <div className="panel stat"><b className="num">{s.avg_decision_seconds != null ? `${Math.round(s.avg_decision_seconds)} с` : "—"}</b><span>от отправки до решения, в среднем</span></div>
+          <div className="panel stat"><b className="num">{s.avg_decision_seconds != null ? `${Math.round(s.avg_decision_seconds)} с` : "—"}</b><span>до решения или передачи аналитику, в среднем</span></div>
         </div>
       )}
 

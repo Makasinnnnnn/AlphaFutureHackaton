@@ -118,6 +118,7 @@ class RecommendOut(BaseModel):
 
 # ---------- Заявки ----------
 class CollateralIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     equipment_name: str | None = Field(default=None, max_length=255)
     equipment_cost: float | None = Field(default=None, gt=0, le=1_000_000_000)
     supplier: str | None = Field(default=None, max_length=255)
@@ -288,7 +289,7 @@ class AnalystApplicationOut(ApplicationOut):
 
 class AnalystDecisionIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
-    action: Literal["APPROVE", "COUNTER_OFFER", "REJECT", "REQUEST_INFO"]
+    action: Literal["APPROVE", "COUNTER_OFFER", "REJECT", "REQUEST_INFO"] = Field(description="Изменение суммы, срока или продукта при APPROVE оформляется как COUNTER_OFFER")
     version: int = Field(description="Версия заявки, которую видел аналитик (оптимистическая блокировка)")
     amount: float | None = Field(default=None, gt=0)
     term_months: int | None = Field(default=None, ge=1, le=120)

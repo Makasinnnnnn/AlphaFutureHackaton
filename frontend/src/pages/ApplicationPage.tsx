@@ -148,7 +148,7 @@ function StepPanel({ app, onChange, reload }: { app: Application; onChange: (a: 
         <dl className="kv">
           <div><dt>Ставка</dt><dd>{pct(ag.rate)}</dd></div>
           <div><dt>Срок</dt><dd>{months(ag.term_months)}</dd></div>
-          <div><dt>Платёж</dt><dd className="num">{money(ag.monthly_payment)}</dd></div>
+          <div><dt>{app.decision?.offer?.product_code === "OVERDRAFT" ? "Проценты в месяц при полном лимите" : "Платёж"}</dt><dd className="num">{money(ag.monthly_payment)}</dd></div>
           {ag.overpayment != null && <div><dt>Переплата за весь срок</dt><dd className="num">{money(ag.overpayment)}</dd></div>}
         </dl>
         {ag.schedule.length > 0 && <Schedule app={app} />}
