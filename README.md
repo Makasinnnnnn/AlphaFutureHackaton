@@ -14,9 +14,9 @@
 
 ## Видео и экраны
 
-**Заявка на оборудование → дозапрос документов → договор → выдача** · 2 мин 20 с, без звука.
+**Заявка на оборудование → дозапрос документов → договор → выдача** · 2 мин 10 с, без звука.
 
-https://github.com/user-attachments/assets/c62b00ff-831d-4e0b-b5a6-f699783bbb84
+https://github.com/user-attachments/assets/37355d4f-1171-4a5e-948c-70e0f2bfe341
 
 Если проигрыватель недоступен: [скачать MP4 из репозитория](https://github.com/Makasinnnnnn/AlphaFutureHackaton/raw/refs/heads/main/docs/media/2026-10-26/demo.mp4) · [обложка](docs/media/2026-10-26/video-poster.webp). Исходные материалы: [папка команды на Google Drive](https://drive.google.com/drive/folders/1CvhyIwR9CWa_C5fDAVl6X_6Q-Fcbne1w). Операции, компании и внешние проверки в записи — демонстрационные.
 
