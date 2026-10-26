@@ -1,12 +1,10 @@
 # Умный кредитный кабинет предпринимателя
 
-Команда: [доска задач](https://github.com/users/Makasinnnnnn/projects/4) · [общий контекст и правила](docs/team/README.md) · [стратегия](docs/team/STRATEGY.md).
+**Начать знакомство:** [обзор продукта](docs/PRODUCT_OVERVIEW.md) · [демонстрация до выдачи](docs/demo.md) · [версия и запуск для проверки](docs/SUBMISSION.md).
 
-**Начать знакомство:** [продукт и доказательства](docs/PRODUCT_OVERVIEW.md) · [демонстрация до выдачи](docs/team/DEMO.md) · [версия и запуск для проверки](docs/SUBMISSION.md).
+Мобильная версия и установка: [PWA](docs/pwa.md). На HTTPS сайт можно добавлять на главный экран через меню поддерживаемого браузера. Кредитный процесс требует связи; офлайн показывается только публичное сообщение о недоступности.
 
-Адаптивность и установка: [матрица проверенных экранов и PWA](docs/team/RESPONSIVE_PWA.md). На HTTPS сайт можно добавлять на главный экран через меню поддерживаемого браузера. Кредитный процесс требует связи; офлайн показывается только публичное сообщение о недоступности.
-
-Исходный прототип импортирован из командного архива. Его исходная история Git не переносилась; воспроизводимый импорт в этом репозитории — commit `72668fa`. Скриншоты и видео ниже обновлены по материалам команды от **26 октября 2026**; результаты проверок фиксируются отдельно в документации команды.
+Скриншоты и видео обновлены **26 октября 2026**. Проверки и ограничения описаны в [verification.md](docs/verification.md).
 
 Прототип цифрового кредитного конвейера для малого и микробизнеса — решение кейса Альфа-Банка на хакатоне «Альфа-Будущее».
 
@@ -202,38 +200,20 @@ python scripts/e2e_check.py      # сквозная проверка работ�
 
 ## Версия для проверки
 
-Исправления по разбору 24 октября и результаты проверок: [SUBMISSION_FIXES](docs/team/SUBMISSION_FIXES.md).
-
 Подбор работает без LLM. Для локального OpenAI-совместимого сервера открытой модели задайте `LLM_ENABLED=true`, `LLM_PROVIDER=openai_compatible`, `LLM_BASE_URL` (например, `http://ollama:11434/v1`), `LLM_MODEL` и при необходимости `LLM_API_KEY`. Поддерживается `POST /chat/completions`. Сбой или некорректный ответ переключает подбор на правила; основной кредитный путь от помощника не зависит. Ollama `/api/generate` сохраняется как отдельный режим по умолчанию.
 
-Проверяемую версию идентифицирует полный commit SHA (`git rev-parse HEAD`). В форме сдачи укажите этот SHA и ссылку на репозиторий; при использовании тега проверьте, на какой SHA он указывает. Конкретное имя тега не является требованием организаторов. Порядок воспроизводимого запуска: [SUBMISSION.md](docs/SUBMISSION.md). Историю проверок смотрите в [FULL_DEBUG.md](docs/team/FULL_DEBUG.md) и CI конкретного коммита.
+Проверяемую версию идентифицирует полный commit SHA (`git rev-parse HEAD`) или тег. В форме сдачи укажите выбранную версию и ссылку на репозиторий. Порядок запуска: [SUBMISSION.md](docs/SUBMISSION.md). Проверки и ограничения: [verification.md](docs/verification.md) и GitHub Actions выбранного коммита.
 
-### UI fonts and design corrections
+### Шрифты и порты
 
-The UI bundles Onest and Unbounded. Styrene UI is optional and is not included in the repository.
-`npm run dev` and `npm run build` check local WOFF2 files without network access.
-If Styrene UI is missing, the UI uses bundled Onest and builds successfully.
-To fetch the official fonts explicitly, run `cd frontend` followed by
-`npm run download:fonts` on a host with access to `alfabank.gcdn.co`, then rebuild.
-You can also place authorized WOFF2 files named `styrene-ui_regular.woff2`,
-`styrene-ui_medium.woff2`, and `styrene-ui_bold.woff2` in `frontend/public/fonts`.
-The finished application loads fonts locally and requires no font CDN.
-Use is based on the hackathon permission stated by the team.
-Regression checks: `cd frontend` followed by `npm run test:fonts`.
+Onest и Unbounded включены в репозиторий и загружаются локально. Styrene UI необязателен; при его отсутствии используется Onest. Сборка не требует доступа к CDN шрифтов.
 
-To rebuild the edited UI when port 8080 is occupied:
+Если порт 8080 занят, выберите другой:
 
 ```sh
 WEB_PORT=8081 docker compose up -d --build web
 ```
 
-Design decisions and verification limits: [DESIGN_GUIDELINES](docs/DESIGN_GUIDELINES.md).
+### Уведомления
 
-### Notification management
-
-Notifications have dedicated pages at `/notifications` (client) and
-`/analyst/notifications` (analyst). Clicking an application notification opens
-its application. The three-dot menu deletes it; Read all is an explicit action.
-Authenticated per-notification endpoints are `POST /api/notifications/{id}/read`
-and `DELETE /api/notifications/{id}`; both are scoped to the current user.
-Rebuild both API and web after updating this feature; no DB migration is required.
+Страницы `/notifications` и `/analyst/notifications` показывают уведомления текущего пользователя. Ссылка открывает заявку; меню позволяет удалить уведомление, «Прочитать все» отмечает их прочитанными. Контракты описаны в [API](docs/api.md).

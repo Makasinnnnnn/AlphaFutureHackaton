@@ -9,6 +9,15 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+/.serena/
+/.codex/
+/.claude/
+/.agents/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.log
 
 # Downloaded during frontend font preparation
 frontend/public/fonts/
