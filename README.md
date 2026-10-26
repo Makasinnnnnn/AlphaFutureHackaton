@@ -14,11 +14,11 @@
 
 ## Видео и экраны
 
-**[Смотреть демонстрацию: заявка на оборудование → дозапрос документов → договор → выдача](docs/media/2026-10-26/demo.mp4)** · 2 мин 20 с, без звука, MP4.
+**Заявка на оборудование → дозапрос документов → договор → выдача** · 2 мин 20 с, без звука.
 
-[![Открыть видео демонстрации кредитного кабинета](docs/media/2026-10-26/video-poster.webp)](docs/media/2026-10-26/demo.mp4)
+https://github.com/user-attachments/assets/c62b00ff-831d-4e0b-b5a6-f699783bbb84
 
-Видео сохранено в репозитории; [скачать MP4](https://github.com/Makasinnnnnn/AlphaFutureHackaton/raw/refs/heads/main/docs/media/2026-10-26/demo.mp4). Исходные материалы: [папка команды на Google Drive](https://drive.google.com/drive/folders/1CvhyIwR9CWa_C5fDAVl6X_6Q-Fcbne1w). Операции, компании и внешние проверки в записи — демонстрационные.
+Если проигрыватель недоступен: [скачать MP4 из репозитория](https://github.com/Makasinnnnnn/AlphaFutureHackaton/raw/refs/heads/main/docs/media/2026-10-26/demo.mp4) · [обложка](docs/media/2026-10-26/video-poster.webp). Исходные материалы: [папка команды на Google Drive](https://drive.google.com/drive/folders/1CvhyIwR9CWa_C5fDAVl6X_6Q-Fcbne1w). Операции, компании и внешние проверки в записи — демонстрационные.
 
 Нажмите на скриншот, чтобы открыть полную страницу. У превью длинных экранов оставлена основная часть сценария, полные версии сохраняют графики и документы.
 
